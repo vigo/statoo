@@ -2,7 +2,7 @@ package app
 
 import (
 	"context"
-	"errors"
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"io"
@@ -18,6 +18,7 @@ var (
 	argURL                string
 	optVersionInformation *bool
 	optTimeout            *int
+	optVerboseOutput      *bool
 
 	usage = `
 usage: %[1]s [-flags] URL
@@ -44,13 +45,10 @@ type CLIApplication struct {
 
 // NewCLIApplication creates new CLIApplication instance
 func NewCLIApplication() *CLIApplication {
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, usage, os.Args[0], version, defTimeout)
-	}
-
 	optVersionInformation = flag.Bool("version", false, "")
 	optTimeout = flag.Int("timeout", defTimeout, "")
 	flag.IntVar(optTimeout, "t", defTimeout, "")
+
 	flag.Parse()
 
 	argURL = flag.Arg(0)
@@ -62,8 +60,14 @@ func NewCLIApplication() *CLIApplication {
 
 // Run executes main application
 func (c *CLIApplication) Run() error {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, usage, os.Args[0], version, defTimeout)
+		os.Exit(2)
+	}
+
 	if *optVersionInformation {
-		c.Version()
+		fmt.Fprintln(c.Out, version)
+		return nil
 	}
 
 	if err := c.Validate(); err != nil {
@@ -76,15 +80,15 @@ func (c *CLIApplication) Run() error {
 // Validate runs validations for flags
 func (c *CLIApplication) Validate() error {
 	if argURL == "" {
-		return errors.New("please provide URL")
+		return fmt.Errorf("please provide URL")
 	}
 
 	if argURL[:4] != "http" {
-		return errors.New("URL should start with http:// or https://")
+		return fmt.Errorf("URL should start with http:// or https://")
 	}
 
 	if *optTimeout > 100 || *optTimeout < 1 {
-		return fmt.Errorf("invalid timeout value: %v", optTimeout)
+		return fmt.Errorf("invalid timeout value: %d", *optTimeout)
 	}
 	return c.GetGivenURL()
 }
@@ -95,6 +99,7 @@ func (c *CLIApplication) GetGivenURL() error {
 		MaxIdleConns:       10,
 		IdleConnTimeout:    30 * time.Second,
 		DisableCompression: true,
+		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
 	}
 
 	timeout := time.Duration(*optTimeout) * time.Second
@@ -116,10 +121,4 @@ func (c *CLIApplication) GetGivenURL() error {
 
 	fmt.Fprintf(c.Out, "%d\n", resp.StatusCode)
 	return nil
-}
-
-// Version returns the current version of CLIApplication
-func (c *CLIApplication) Version() {
-	fmt.Fprintf(os.Stderr, "%s\n", version)
-	os.Exit(0)
 }

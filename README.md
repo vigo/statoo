@@ -7,7 +7,9 @@
 # Statoo
 
 A super basic http tool that makes only `GET` request to given URL and returns
-status code of the response.
+status code of the response. Well, if you are `curl` or `http` (*httpie*) user,
+you can make the same kind of request and get a kind-of same response since
+`statoo` is way better simple :)
 
 ## Install
 

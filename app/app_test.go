@@ -2,29 +2,46 @@ package app
 
 import (
 	"bytes"
-	"os"
 	"testing"
 )
 
-var cmd *CLIApplication
+func TestCLIApplication(t *testing.T) {
+	cmd := NewCLIApplication()
+	buff := new(bytes.Buffer)
+	cmd.Out = buff
 
-func TestMain(m *testing.M) {
-	cmd = NewCLIApplication()
-	os.Exit(m.Run())
-}
+	t.Run("call w/o URL", func(t *testing.T) {
+		if got := cmd.Run(); got.Error() != "please provide URL" {
+			t.Errorf("got: %v", got)
+		}
+	})
 
-func TestAppVersion(t *testing.T) {
-	t.Run("app should have a version information", func(t *testing.T) {
+	t.Run("URL w/o prefix", func(t *testing.T) {
+		argURL = "vigo.io"
+		if got := cmd.Run(); got.Error() != "URL should start with http:// or https://" {
+			t.Errorf("got: %v", got)
+		}
+	})
 
-		buff := new(bytes.Buffer)
+	t.Run("set errorious timeout", func(t *testing.T) {
+		*optTimeout = 200
+		argURL = "https://vigo.io"
 
+		if got := cmd.Run(); got.Error() != "invalid timeout value: 200" {
+			t.Errorf("want nil, got: %v", got)
+		}
+	})
+
+	t.Run("get version", func(t *testing.T) {
 		*optVersionInformation = true
-		cmd.Out = buff
-		cmd.Run()
 
-		curVersion := string(bytes.TrimSpace(buff.Bytes()))
-		if curVersion != version {
-			t.Errorf("want: %s, got: %s", version, curVersion)
+		if got := cmd.Run(); got != nil {
+			t.Errorf("want nil, got: %v", got)
+		}
+
+		got := string(bytes.TrimSpace(buff.Bytes()))
+		if got != version {
+			t.Errorf("want %v, got: %v", version, got)
 		}
 	})
 }
