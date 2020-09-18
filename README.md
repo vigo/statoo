@@ -26,7 +26,7 @@ usage: statoo [-flags] URL
 
   flags:
 
-  -version        display version information (x.x.x)
+  -version        display version information (0.0.0)
   -t, -timeout    default timeout in seconds  (default: 10)
   -h, -help       display help
   -verbose        verbose output              (default: false)

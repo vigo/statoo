@@ -45,6 +45,13 @@ type CLIApplication struct {
 
 // NewCLIApplication creates new CLIApplication instance
 func NewCLIApplication() *CLIApplication {
+	flag.Usage = func() {
+		// w/o os.Stdout, you need to pipe out via
+		// cmd &> /path/to/file
+		fmt.Fprintf(os.Stdout, usage, os.Args[0], version, defTimeout)
+		os.Exit(0)
+	}
+
 	optVersionInformation = flag.Bool("version", false, "")
 	optTimeout = flag.Int("timeout", defTimeout, "")
 	flag.IntVar(optTimeout, "t", defTimeout, "")
@@ -60,11 +67,6 @@ func NewCLIApplication() *CLIApplication {
 
 // Run executes main application
 func (c *CLIApplication) Run() error {
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, usage, os.Args[0], version, defTimeout)
-		os.Exit(2)
-	}
-
 	if *optVersionInformation {
 		fmt.Fprintln(c.Out, version)
 		return nil
