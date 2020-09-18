@@ -22,19 +22,24 @@ $ go get -u github.com/vigo/statoo
 ```bash
 $ statoo -h
 
+
 usage: statoo [-flags] URL
 
   flags:
 
-  -version        display version information (0.0.0)
+  -version        display version information (X.X.X)
   -t, -timeout    default timeout in seconds  (default: 10)
   -h, -help       display help
+  -json           provides json output
   -verbose        verbose output              (default: false)
 
   examples:
   
   $ statoo "https://ugur.ozyilmazel.com"
   $ statoo -timeout 30 "https://ugur.ozyilmazel.com"
+  $ statoo -verbose "https://ugur.ozyilmazel.com"
+  $ statoo -json http://vigo.io
+
 ```
 
 Let’s try:
