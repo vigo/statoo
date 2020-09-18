@@ -42,7 +42,28 @@ Let’s try:
 ```bash
 $ statoo "https://ugur.ozyilmazel.com"
 200
+
+$ statoo -verbose "https://ugur.ozyilmazel.com"
+https://ugur.ozyilmazel.com -> 200
 ```
+
+or;
+
+```bash
+$ statoo -json http://vigo.io
+```
+
+response;
+
+```json
+{
+  "url": "http://vigo.io",
+  "status": 200,
+  "checked_at": "2020-09-18T04:56:14.664255Z"
+}
+```
+
+It’s better to pipe `-json` output to `jq` for pretty print :)
 
 That’s it!
 
