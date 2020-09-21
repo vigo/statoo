@@ -115,11 +115,11 @@ func (c *CLIApplication) Validate() error {
 	if *optTimeout > 100 || *optTimeout < 1 {
 		return fmt.Errorf("invalid timeout value: %d", *optTimeout)
 	}
-	return c.GetGivenURL()
+	return c.GetResult()
 }
 
-// GetGivenURL fetches the given URL
-func (c *CLIApplication) GetGivenURL() error {
+// GetResult fetches the status information of given URL
+func (c *CLIApplication) GetResult() error {
 	tr := &http.Transport{
 		MaxIdleConns:       10,
 		IdleConnTimeout:    30 * time.Second,
