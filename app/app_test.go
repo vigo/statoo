@@ -11,14 +11,14 @@ func TestCLIApplication(t *testing.T) {
 	cmd.Out = buff
 
 	t.Run("call w/o URL", func(t *testing.T) {
-		if got := cmd.Run(); got.Error() != "please provide URL" {
+		if got := cmd.Run(); got.Error() != "parse \"\": empty url" {
 			t.Errorf("got: %v", got)
 		}
 	})
 
 	t.Run("URL w/o prefix", func(t *testing.T) {
 		argURL = "vigo.io"
-		if got := cmd.Run(); got.Error() != "URL should start with http:// or https://" {
+		if got := cmd.Run(); got.Error() != "parse \"vigo.io\": invalid URI for request" {
 			t.Errorf("got: %v", got)
 		}
 	})

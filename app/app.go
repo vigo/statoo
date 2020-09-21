@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 )
@@ -106,12 +107,9 @@ func (c *CLIApplication) Run() error {
 
 // Validate runs validations for flags
 func (c *CLIApplication) Validate() error {
-	if argURL == "" {
-		return fmt.Errorf("please provide URL")
-	}
-
-	if argURL[:4] != "http" {
-		return fmt.Errorf("URL should start with http:// or https://")
+	_, err := url.ParseRequestURI(argURL)
+	if err != nil {
+		return fmt.Errorf(err.Error())
 	}
 
 	if *optTimeout > 100 || *optTimeout < 1 {
