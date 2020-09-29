@@ -32,6 +32,7 @@ usage: statoo [-flags] URL
   -h, -help       display help
   -json           provides json output
   -verbose        verbose output              (default: false)
+  -header         request header, multiple allowed
 
   examples:
   
@@ -39,6 +40,8 @@ usage: statoo [-flags] URL
   $ statoo -timeout 30 "https://ugur.ozyilmazel.com"
   $ statoo -verbose "https://ugur.ozyilmazel.com"
   $ statoo -json http://vigo.io
+  $ statoo -header "Authorization: Bearer TOKEN" http://vigo.io
+  $ statoo -header "Authorization: Bearer TOKEN" -header "X-Api-Key: APIKEY" http://vigo.io
 
 ```
 
@@ -66,6 +69,12 @@ response;
   "status": 200,
   "checked_at": "2020-09-18T04:56:14.664255Z"
 }
+```
+
+Now you can pass multiple `-header` flags:
+
+```bash
+$ status -header "Key1: Value1" -header "Key2: Value2" "https://ugur.ozyilmazel.com"
 ```
 
 It’s better to pipe `-json` output to `jq` for pretty print :)

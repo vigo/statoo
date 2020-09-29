@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -33,6 +34,7 @@ var (
 	optTimeout            *int
 	optVerboseOutput      *bool
 	optJSONOutput         *bool
+	optHeaders            headersFlag
 
 	usage = `
 usage: %[1]s [-flags] URL
@@ -44,16 +46,30 @@ usage: %[1]s [-flags] URL
   -h, -help       display help
   -json           provides json output
   -verbose        verbose output              (default: false)
-
+  -header         request header, multiple allowed
+	
   examples:
   
   $ %[1]s "https://ugur.ozyilmazel.com"
   $ %[1]s -timeout 30 "https://ugur.ozyilmazel.com"
   $ %[1]s -verbose "https://ugur.ozyilmazel.com"
   $ %[1]s -json http://vigo.io
+  $ %[1]s -header "Authorization: Bearer TOKEN" http://vigo.io
+  $ %[1]s -header "Authorization: Bearer TOKEN" -header "X-Api-Key: APIKEY" http://vigo.io
 
 `
 )
+
+type headersFlag []string
+
+func (h *headersFlag) String() string {
+	return "headers"
+}
+
+func (h *headersFlag) Set(value string) error {
+	*h = append(*h, strings.TrimSpace(value))
+	return nil
+}
 
 // CLIApplication represents app structure
 type CLIApplication struct {
@@ -81,7 +97,7 @@ func NewCLIApplication() *CLIApplication {
 	optJSONOutput = flag.Bool("json", false, "")
 	optTimeout = flag.Int("timeout", defTimeout, "")
 	flag.IntVar(optTimeout, "t", defTimeout, "")
-
+	flag.Var(&optHeaders, "header", "http headers desc...")
 	flag.Parse()
 
 	argURL = flag.Arg(0)
@@ -137,6 +153,13 @@ func (c *CLIApplication) GetResult() error {
 	req, err := http.NewRequestWithContext(ctx, "GET", argURL, nil)
 	if err != nil {
 		return fmt.Errorf("error: %v", err)
+	}
+
+	if len(optHeaders) > 0 {
+		for _, headerValue := range optHeaders {
+			vals := strings.Split(headerValue, ":")
+			req.Header.Set(vals[0], vals[1])
+		}
 	}
 
 	resp, err := client.Do(req)
