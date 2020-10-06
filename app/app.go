@@ -97,7 +97,7 @@ func NewCLIApplication() *CLIApplication {
 	optJSONOutput = flag.Bool("json", false, "")
 	optTimeout = flag.Int("timeout", defTimeout, "")
 	flag.IntVar(optTimeout, "t", defTimeout, "")
-	flag.Var(&optHeaders, "header", "http headers desc...")
+	flag.Var(&optHeaders, "header", "")
 	flag.Parse()
 
 	argURL = flag.Arg(0)
