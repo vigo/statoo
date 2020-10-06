@@ -25,7 +25,7 @@ import (
 	"time"
 )
 
-const version = "0.1.2"
+const version = "0.1.3"
 const defTimeout = 10
 
 var (
