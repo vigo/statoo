@@ -12,6 +12,8 @@ status code of the response. Well, if you are `curl` or `http` (*httpie*) user,
 you can make the same kind of request and get a kind-of same response since
 `statoo` is way better simple :)
 
+`statoo` injects `Accept-Encoding: gzip` request header to every http request!
+
 ## Install
 
 ```bash
@@ -70,12 +72,14 @@ response;
 {
     "url": "https://vigo.io",
     "status": 200,
-    "checked_at": "2021-05-10T10:26:04.972779Z",
-    "response_duration": 196.038446
+    "checked_at": "2021-05-10T16:44:19.22862Z",
+    "response_duration": 231.701225,
+    "response_size": 1453
 }
 ```
 
-`response_duration` is in milliseconds.
+- `response_duration` is in milliseconds.
+- `response_size` is in bytes (*gzipped*)
 
 Let’s find text inside of the response body. This feature is only available
 if the `-json` flag is set!
@@ -85,20 +89,22 @@ $ statoo -json -find "Meetup organization" https://vigo.io
 {
     "url": "https://vigo.io",
     "status": 200,
-    "checked_at": "2021-05-10T10:26:38.481739Z",
+    "checked_at": "2021-05-10T16:45:35.980107Z",
+    "response_duration": 154.040385,
+    "response_size": 1453,
     "find": "Meetup organization",
-    "found": true,
-    "response_duration": 1119.754662
+    "found": true
 }
 
 $ statoo -json -find "meetup organization" https://vigo.io # case sensitive
 {
     "url": "https://vigo.io",
     "status": 200,
-    "checked_at": "2021-05-10T10:27:05.754963Z",
+    "checked_at": "2021-05-10T16:46:03.04418Z",
+    "response_duration": 133.755459,
+    "response_size": 1453,
     "find": "meetup organization",
-    "found": false,
-    "response_duration": 98.336486
+    "found": false
 }
 ```
 
@@ -108,7 +114,7 @@ Now you can pass multiple `-header` flags:
 $ statoo -header "Key1: Value1" -header "Key2: Value2" "https://ugur.ozyilmazel.com"
 ```
 
-It’s better to pipe `-json` output to `jq` for pretty print :)
+It’s better to pipe `-json` output to `jq` or `python -m json.tool` for pretty print :)
 
 That’s it!
 

@@ -12,6 +12,7 @@ Usage
 package app
 
 import (
+	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -21,6 +22,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -85,9 +87,10 @@ type JSONResponse struct {
 	URL              string    `json:"url"`
 	Status           int       `json:"status"`
 	CheckedAt        time.Time `json:"checked_at"`
+	ResponseDuration float64   `json:"response_duration,omitempty"`
+	ContentLength    int       `json:"response_size,omitempty"`
 	Find             *string   `json:"find,omitempty"`
 	Found            *bool     `json:"found,omitempty"`
-	ResponseDuration *float64  `json:"response_duration,omitempty"`
 }
 
 // NewCLIApplication creates new CLIApplication instance
@@ -166,6 +169,8 @@ func (c *CLIApplication) GetResult() error {
 		return fmt.Errorf("error: %v", err)
 	}
 
+	req.Header.Set("Accept-Encoding", "gzip")
+
 	if len(optHeaders) > 0 {
 		for _, headerValue := range optHeaders {
 			vals := strings.Split(headerValue, ":")
@@ -186,20 +191,35 @@ func (c *CLIApplication) GetResult() error {
 	}
 
 	if *optJSONOutput {
+		contentLength, _ := strconv.Atoi(resp.Header["Content-Length"][0])
+
 		js := &JSONResponse{
 			URL:              argURL,
 			Status:           resp.StatusCode,
 			CheckedAt:        time.Now().UTC(),
-			ResponseDuration: &milliSecond,
+			ResponseDuration: milliSecond,
 			Find:             nil,
 			Found:            nil,
+			ContentLength:    contentLength,
 		}
 
 		if *optFind != "" {
-			body, err := io.ReadAll(resp.Body)
+			var bodyReader io.ReadCloser
+
+			switch resp.Header.Get("Content-Encoding") {
+			case "gzip":
+				bodyReader, err = gzip.NewReader(resp.Body)
+				if err != nil {
+					return fmt.Errorf("body read (gzip) error: %v", err)
+				}
+				defer bodyReader.Close()
+			default:
+				bodyReader = resp.Body
+			}
+
+			body, err := io.ReadAll(bodyReader)
 			if err == nil {
-				var boolFound bool
-				boolFound = strings.Contains(string(body), *optFind)
+				boolFound := strings.Contains(string(body), *optFind)
 				js.Find = optFind
 				js.Found = &boolFound
 			}
@@ -209,7 +229,11 @@ func (c *CLIApplication) GetResult() error {
 		if err != nil {
 			return fmt.Errorf("error: %v", err)
 		}
-		c.Out.Write(j)
+
+		_, err = c.Out.Write(j)
+		if err != nil {
+			return fmt.Errorf("error: %v", err)
+		}
 		return nil
 	}
 	if *optVerboseOutput {
