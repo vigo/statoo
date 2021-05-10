@@ -3,6 +3,7 @@
 [![Documentation](https://godoc.org/github.com/vigo/statoo?status.svg)](https://pkg.go.dev/github.com/vigo/statoo)
 [![Go Report Card](https://goreportcard.com/badge/github.com/vigo/statoo)](https://goreportcard.com/report/github.com/vigo/statoo)
 [![Build Status](https://travis-ci.org/vigo/statoo.svg?branch=main)](https://travis-ci.org/vigo/statoo)
+![Go Build Status](https://github.com/vigo/statoo/actions/workflows/go.yml/badge.svg)
 
 # Statoo
 
