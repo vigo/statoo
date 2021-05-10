@@ -34,6 +34,7 @@ usage: statoo [-flags] URL
   -json           provides json output
   -verbose        verbose output              (default: false)
   -header         request header, multiple allowed
+  -find           find text in repsonse body if -json is set
 
   examples:
   
@@ -43,6 +44,7 @@ usage: statoo [-flags] URL
   $ statoo -json http://vigo.io
   $ statoo -header "Authorization: Bearer TOKEN" http://vigo.io
   $ statoo -header "Authorization: Bearer TOKEN" -header "X-Api-Key: APIKEY" http://vigo.io
+  $ statoo -json -find "Meetup organization" https://vigo.io
 
 ```
 
@@ -59,16 +61,39 @@ https://ugur.ozyilmazel.com -> 200
 or;
 
 ```bash
-$ statoo -json http://vigo.io
+$ statoo -json https://vigo.io
 ```
 
 response;
 
 ```json
 {
-  "url": "http://vigo.io",
+  "url": "https://vigo.io",
   "status": 200,
   "checked_at": "2020-09-18T04:56:14.664255Z"
+}
+```
+
+Let’s find text inside of the response body. This feature is only available
+if the `-json` flag is set!
+
+```bash
+$ status -json -find "Meetup organization" https://vigo.io
+{
+    "url":"https://vigo.io",
+    "status":200,
+    "checked_at":"2021-05-10T06:34:29.118739Z",
+    "find":"Meetup organization",
+    "found":true
+}
+
+$ status -json -find "meetup organization" https://vigo.io # case sensitive
+{
+    "url":"https://vigo.io",
+    "status":200,
+    "checked_at":"2021-05-10T06:34:29.118739Z",
+    "find":"meetup organization",
+    "found":false
 }
 ```
 

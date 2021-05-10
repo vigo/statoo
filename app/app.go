@@ -35,6 +35,7 @@ var (
 	optVerboseOutput      *bool
 	optJSONOutput         *bool
 	optHeaders            headersFlag
+	optFind               *string
 
 	usage = `
 usage: %[1]s [-flags] URL
@@ -47,15 +48,18 @@ usage: %[1]s [-flags] URL
   -json           provides json output
   -verbose        verbose output              (default: false)
   -header         request header, multiple allowed
+  -find           find text in repsonse body if -json is set
 	
   examples:
   
   $ %[1]s "https://ugur.ozyilmazel.com"
   $ %[1]s -timeout 30 "https://ugur.ozyilmazel.com"
   $ %[1]s -verbose "https://ugur.ozyilmazel.com"
-  $ %[1]s -json http://vigo.io
-  $ %[1]s -header "Authorization: Bearer TOKEN" http://vigo.io
-  $ %[1]s -header "Authorization: Bearer TOKEN" -header "X-Api-Key: APIKEY" http://vigo.io
+  $ %[1]s -json https://vigo.io
+  $ %[1]s -json -find "python" https://vigo.io
+  $ %[1]s -header "Authorization: Bearer TOKEN" https://vigo.io
+  $ %[1]s -header "Authorization: Bearer TOKEN" -header "X-Api-Key: APIKEY" https://vigo.io
+  $ %[1]s -json -find "Meetup organization" https://vigo.io
 
 `
 )
@@ -81,6 +85,8 @@ type JSONResponse struct {
 	URL       string    `json:"url"`
 	Status    int       `json:"status"`
 	CheckedAt time.Time `json:"checked_at"`
+	Find      *string   `json:"find,omitempty"`
+	Found     *bool     `json:"found,omitempty"`
 }
 
 // NewCLIApplication creates new CLIApplication instance
@@ -96,6 +102,8 @@ func NewCLIApplication() *CLIApplication {
 	optVerboseOutput = flag.Bool("verbose", false, "")
 	optJSONOutput = flag.Bool("json", false, "")
 	optTimeout = flag.Int("timeout", defTimeout, "")
+	optFind = flag.String("find", "", "")
+
 	flag.IntVar(optTimeout, "t", defTimeout, "")
 	flag.Var(&optHeaders, "header", "")
 	flag.Parse()
@@ -166,12 +174,27 @@ func (c *CLIApplication) GetResult() error {
 	if err != nil {
 		return fmt.Errorf("error: %v", err)
 	}
+	if resp.Body != nil {
+		defer resp.Body.Close()
+	}
+
 	if *optJSONOutput {
 		js := &JSONResponse{
 			URL:       argURL,
 			Status:    resp.StatusCode,
 			CheckedAt: time.Now().UTC(),
 		}
+
+		if optFind != nil {
+			body, err := io.ReadAll(resp.Body)
+			if err == nil {
+				var boolFound bool
+				boolFound = strings.Contains(string(body), *optFind)
+				js.Find = optFind
+				js.Found = &boolFound
+			}
+		}
+
 		j, err := json.Marshal(js)
 		if err != nil {
 			return fmt.Errorf("error: %v", err)
