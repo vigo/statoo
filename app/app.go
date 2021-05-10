@@ -191,7 +191,11 @@ func (c *CLIApplication) GetResult() error {
 	}
 
 	if *optJSONOutput {
-		contentLength, _ := strconv.Atoi(resp.Header["Content-Length"][0])
+		contentLength := 0
+
+		if _, ok := resp.Header["Content-Length"]; ok {
+			contentLength, _ = strconv.Atoi(resp.Header["Content-Length"][0])
+		}
 
 		js := &JSONResponse{
 			URL:              argURL,
