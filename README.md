@@ -107,6 +107,40 @@ It’s better to pipe `-json` output to `jq` for pretty print :)
 
 That’s it!
 
+---
+
+## Rake Tasks
+
+```bash
+$ rake -T
+
+rake default            # show avaliable tasks (default task)
+rake docker:build       # Build
+rake docker:rmi         # Delete image
+rake docker:run         # Run
+rake release[revision]  # Release new version major,minor,patch, default: patch
+rake test[verbose]      # run tests
+```
+
+---
+
+## Docker
+
+build:
+
+```bash
+$ docker build . -t statoo
+```
+
+run:
+
+```bash
+$ docker run -i -t statoo:latest statoo -h
+$ docker run -i -t statoo:latest statoo -json -find "Meetup organization" https://vigo.io
+```
+
+---
+
 ## Contributer(s)
 
 * [Uğur "vigo" Özyılmazel](https://github.com/vigo) - Creator, maintainer
