@@ -68,11 +68,14 @@ response;
 
 ```json
 {
-  "url": "https://vigo.io",
-  "status": 200,
-  "checked_at": "2020-09-18T04:56:14.664255Z"
+    "url": "https://vigo.io",
+    "status": 200,
+    "checked_at": "2021-05-10T10:26:04.972779Z",
+    "response_duration": 196.038446
 }
 ```
+
+`response_duration` is in milliseconds.
 
 Let’s find text inside of the response body. This feature is only available
 if the `-json` flag is set!
@@ -80,20 +83,22 @@ if the `-json` flag is set!
 ```bash
 $ statoo -json -find "Meetup organization" https://vigo.io
 {
-    "url":"https://vigo.io",
-    "status":200,
-    "checked_at":"2021-05-10T06:34:29.118739Z",
-    "find":"Meetup organization",
-    "found":true
+    "url": "https://vigo.io",
+    "status": 200,
+    "checked_at": "2021-05-10T10:26:38.481739Z",
+    "find": "Meetup organization",
+    "found": true,
+    "response_duration": 1119.754662
 }
 
 $ statoo -json -find "meetup organization" https://vigo.io # case sensitive
 {
-    "url":"https://vigo.io",
-    "status":200,
-    "checked_at":"2021-05-10T06:34:29.118739Z",
-    "find":"meetup organization",
-    "found":false
+    "url": "https://vigo.io",
+    "status": 200,
+    "checked_at": "2021-05-10T10:27:05.754963Z",
+    "find": "meetup organization",
+    "found": false,
+    "response_duration": 98.336486
 }
 ```
 

@@ -82,11 +82,12 @@ type CLIApplication struct {
 
 // JSONResponse represents data structure of json repsonse
 type JSONResponse struct {
-	URL       string    `json:"url"`
-	Status    int       `json:"status"`
-	CheckedAt time.Time `json:"checked_at"`
-	Find      *string   `json:"find,omitempty"`
-	Found     *bool     `json:"found,omitempty"`
+	URL              string    `json:"url"`
+	Status           int       `json:"status"`
+	CheckedAt        time.Time `json:"checked_at"`
+	Find             *string   `json:"find,omitempty"`
+	Found            *bool     `json:"found,omitempty"`
+	ResponseDuration *float64  `json:"response_duration,omitempty"`
 }
 
 // NewCLIApplication creates new CLIApplication instance
@@ -159,6 +160,7 @@ func (c *CLIApplication) GetResult() error {
 	}
 
 	ctx := context.Background()
+
 	req, err := http.NewRequestWithContext(ctx, "GET", argURL, nil)
 	if err != nil {
 		return fmt.Errorf("error: %v", err)
@@ -171,21 +173,26 @@ func (c *CLIApplication) GetResult() error {
 		}
 	}
 
+	startTime := time.Now()
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("error: %v", err)
 	}
+	endTime := time.Since(startTime)
+	milliSecond := float64(endTime) / float64(time.Millisecond)
+
 	if resp.Body != nil {
 		defer resp.Body.Close()
 	}
 
 	if *optJSONOutput {
 		js := &JSONResponse{
-			URL:       argURL,
-			Status:    resp.StatusCode,
-			CheckedAt: time.Now().UTC(),
-			Find:      nil,
-			Found:     nil,
+			URL:              argURL,
+			Status:           resp.StatusCode,
+			CheckedAt:        time.Now().UTC(),
+			ResponseDuration: &milliSecond,
+			Find:             nil,
+			Found:            nil,
 		}
 
 		if *optFind != "" {
