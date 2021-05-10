@@ -106,6 +106,7 @@ func NewCLIApplication() *CLIApplication {
 
 	flag.IntVar(optTimeout, "t", defTimeout, "")
 	flag.Var(&optHeaders, "header", "")
+
 	flag.Parse()
 
 	argURL = flag.Arg(0)
@@ -183,9 +184,11 @@ func (c *CLIApplication) GetResult() error {
 			URL:       argURL,
 			Status:    resp.StatusCode,
 			CheckedAt: time.Now().UTC(),
+			Find:      nil,
+			Found:     nil,
 		}
 
-		if optFind != nil {
+		if *optFind != "" {
 			body, err := io.ReadAll(resp.Body)
 			if err == nil {
 				var boolFound bool
