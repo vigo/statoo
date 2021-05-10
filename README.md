@@ -78,7 +78,7 @@ Let’s find text inside of the response body. This feature is only available
 if the `-json` flag is set!
 
 ```bash
-$ status -json -find "Meetup organization" https://vigo.io
+$ statoo -json -find "Meetup organization" https://vigo.io
 {
     "url":"https://vigo.io",
     "status":200,
@@ -87,7 +87,7 @@ $ status -json -find "Meetup organization" https://vigo.io
     "found":true
 }
 
-$ status -json -find "meetup organization" https://vigo.io # case sensitive
+$ statoo -json -find "meetup organization" https://vigo.io # case sensitive
 {
     "url":"https://vigo.io",
     "status":200,
@@ -100,7 +100,7 @@ $ status -json -find "meetup organization" https://vigo.io # case sensitive
 Now you can pass multiple `-header` flags:
 
 ```bash
-$ status -header "Key1: Value1" -header "Key2: Value2" "https://ugur.ozyilmazel.com"
+$ statoo -header "Key1: Value1" -header "Key2: Value2" "https://ugur.ozyilmazel.com"
 ```
 
 It’s better to pipe `-json` output to `jq` for pretty print :)
