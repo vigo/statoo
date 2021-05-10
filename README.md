@@ -41,9 +41,9 @@ usage: statoo [-flags] URL
   $ statoo "https://ugur.ozyilmazel.com"
   $ statoo -timeout 30 "https://ugur.ozyilmazel.com"
   $ statoo -verbose "https://ugur.ozyilmazel.com"
-  $ statoo -json http://vigo.io
-  $ statoo -header "Authorization: Bearer TOKEN" http://vigo.io
-  $ statoo -header "Authorization: Bearer TOKEN" -header "X-Api-Key: APIKEY" http://vigo.io
+  $ statoo -json https://vigo.io
+  $ statoo -header "Authorization: Bearer TOKEN" https://vigo.io
+  $ statoo -header "Authorization: Bearer TOKEN" -header "X-Api-Key: APIKEY" https://vigo.io
   $ statoo -json -find "Meetup organization" https://vigo.io
 
 ```
