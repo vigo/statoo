@@ -14,10 +14,19 @@ you can make the same kind of request and get a kind-of same response since
 
 `statoo` injects `Accept-Encoding: gzip` request header to every http request!
 
-## Install
+## Installation
+
+You can install from the source;
 
 ```bash
-$ go get -u github.com/vigo/statoo
+$ go get github.com/vigo/statoo
+```
+
+or, you can install from `brew`:
+
+```bash
+$ brew tap vigo/statoo
+$ brew install statoo
 ```
 
 ## Usage:
