@@ -34,7 +34,6 @@ $ brew install statoo
 ```bash
 $ statoo -h
 
-
 usage: statoo [-flags] URL
 
   flags:
@@ -46,6 +45,7 @@ usage: statoo [-flags] URL
   -verbose        verbose output              (default: false)
   -header         request header, multiple allowed
   -find           find text in repsonse body if -json is set
+  -auth           basic auth "username:password"
 
   examples:
   
@@ -53,10 +53,11 @@ usage: statoo [-flags] URL
   $ statoo -timeout 30 "https://ugur.ozyilmazel.com"
   $ statoo -verbose "https://ugur.ozyilmazel.com"
   $ statoo -json https://vigo.io
+  $ statoo -json -find "python" https://vigo.io
   $ statoo -header "Authorization: Bearer TOKEN" https://vigo.io
   $ statoo -header "Authorization: Bearer TOKEN" -header "X-Api-Key: APIKEY" https://vigo.io
   $ statoo -json -find "Meetup organization" https://vigo.io
-
+  $ statoo -auth "user:secret" https://vigo.io
 ```
 
 Let’s try:
@@ -81,14 +82,14 @@ response;
 {
     "url": "https://vigo.io",
     "status": 200,
-    "checked_at": "2021-05-10T16:44:19.22862Z",
-    "response_duration": 231.701225,
-    "response_size": 1453
+    "checked_at": "2021-05-13T18:09:26.342012Z",
+    "elapsed": 210.587871,
+    "length": 1453
 }
 ```
 
-- `response_duration` is in milliseconds.
-- `response_size` is in bytes (*gzipped*)
+- `elapsed` represents response is in milliseconds.
+- `length` represents response size in bytes (*gzipped*)
 
 Let’s find text inside of the response body. This feature is only available
 if the `-json` flag is set!
@@ -98,9 +99,9 @@ $ statoo -json -find "Meetup organization" https://vigo.io
 {
     "url": "https://vigo.io",
     "status": 200,
-    "checked_at": "2021-05-10T16:45:35.980107Z",
-    "response_duration": 154.040385,
-    "response_size": 1453,
+    "checked_at": "2021-05-13T18:10:38.196705Z",
+    "elapsed": 183.128016,
+    "length": 1453,
     "find": "Meetup organization",
     "found": true
 }
@@ -109,12 +110,18 @@ $ statoo -json -find "meetup organization" https://vigo.io # case sensitive
 {
     "url": "https://vigo.io",
     "status": 200,
-    "checked_at": "2021-05-10T16:46:03.04418Z",
-    "response_duration": 133.755459,
-    "response_size": 1453,
+    "checked_at": "2021-05-13T18:10:58.100932Z",
+    "elapsed": 189.403753,
+    "length": 1453,
     "find": "meetup organization",
     "found": false
 }
+```
+
+You can add basic authentication via `-auth` flag
+
+```bash
+$ statoo -auth "username:password" https://your.basic.auth.url
 ```
 
 Now you can pass multiple `-header` flags:

@@ -38,6 +38,7 @@ var (
 	optJSONOutput         *bool
 	optHeaders            headersFlag
 	optFind               *string
+	optBasicAuth          *string
 
 	usage = `
 usage: %[1]s [-flags] URL
@@ -51,7 +52,8 @@ usage: %[1]s [-flags] URL
   -verbose        verbose output              (default: false)
   -header         request header, multiple allowed
   -find           find text in repsonse body if -json is set
-	
+  -auth           basic auth "username:password"
+
   examples:
   
   $ %[1]s "https://ugur.ozyilmazel.com"
@@ -62,6 +64,7 @@ usage: %[1]s [-flags] URL
   $ %[1]s -header "Authorization: Bearer TOKEN" https://vigo.io
   $ %[1]s -header "Authorization: Bearer TOKEN" -header "X-Api-Key: APIKEY" https://vigo.io
   $ %[1]s -json -find "Meetup organization" https://vigo.io
+  $ %[1]s -auth "user:secret" https://vigo.io
 
 `
 )
@@ -84,13 +87,13 @@ type CLIApplication struct {
 
 // JSONResponse represents data structure of json repsonse
 type JSONResponse struct {
-	URL              string    `json:"url"`
-	Status           int       `json:"status"`
-	CheckedAt        time.Time `json:"checked_at"`
-	ResponseDuration float64   `json:"response_duration,omitempty"`
-	ContentLength    int       `json:"response_size,omitempty"`
-	Find             *string   `json:"find,omitempty"`
-	Found            *bool     `json:"found,omitempty"`
+	URL       string    `json:"url"`
+	Status    int       `json:"status"`
+	CheckedAt time.Time `json:"checked_at"`
+	Elapsed   float64   `json:"elapsed,omitempty"`
+	Length    int       `json:"length,omitempty"`
+	Find      *string   `json:"find,omitempty"`
+	Found     *bool     `json:"found,omitempty"`
 }
 
 // NewCLIApplication creates new CLIApplication instance
@@ -107,6 +110,7 @@ func NewCLIApplication() *CLIApplication {
 	optJSONOutput = flag.Bool("json", false, "")
 	optTimeout = flag.Int("timeout", defTimeout, "")
 	optFind = flag.String("find", "", "")
+	optBasicAuth = flag.String("auth", "", "")
 
 	flag.IntVar(optTimeout, "t", defTimeout, "")
 	flag.Var(&optHeaders, "header", "")
@@ -178,13 +182,21 @@ func (c *CLIApplication) GetResult() error {
 		}
 	}
 
-	startTime := time.Now()
+	if *optBasicAuth != "" {
+		if strings.Contains(*optBasicAuth, ":") {
+			words := strings.Split(*optBasicAuth, ":")
+			if len(words) == 2 {
+				req.SetBasicAuth(words[0], words[1])
+			}
+		}
+	}
+
+	start := time.Now()
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("error: %v", err)
 	}
-	endTime := time.Since(startTime)
-	milliSecond := float64(endTime) / float64(time.Millisecond)
+	elapsed := time.Since(start)
 
 	if resp.Body != nil {
 		defer resp.Body.Close()
@@ -198,13 +210,13 @@ func (c *CLIApplication) GetResult() error {
 		}
 
 		js := &JSONResponse{
-			URL:              argURL,
-			Status:           resp.StatusCode,
-			CheckedAt:        time.Now().UTC(),
-			ResponseDuration: milliSecond,
-			Find:             nil,
-			Found:            nil,
-			ContentLength:    contentLength,
+			URL:       argURL,
+			Status:    resp.StatusCode,
+			CheckedAt: time.Now().UTC(),
+			Elapsed:   float64(elapsed) / float64(time.Millisecond),
+			Find:      nil,
+			Found:     nil,
+			Length:    contentLength,
 		}
 
 		if *optFind != "" {
