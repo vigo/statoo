@@ -44,7 +44,7 @@ usage: statoo [-flags] URL
   -json           provides json output
   -verbose        verbose output              (default: false)
   -header         request header, multiple allowed
-  -find           find text in repsonse body if -json is set
+  -find           find text in response body if -json is set
   -auth           basic auth "username:password"
 
   examples:

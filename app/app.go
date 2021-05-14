@@ -51,7 +51,7 @@ usage: %[1]s [-flags] URL
   -json           provides json output
   -verbose        verbose output              (default: false)
   -header         request header, multiple allowed
-  -find           find text in repsonse body if -json is set
+  -find           find text in response body if -json is set
   -auth           basic auth "username:password"
 
   examples:
@@ -85,7 +85,7 @@ type CLIApplication struct {
 	Out io.Writer
 }
 
-// JSONResponse represents data structure of json repsonse
+// JSONResponse represents data structure of json response
 type JSONResponse struct {
 	URL       string    `json:"url"`
 	Status    int       `json:"status"`
