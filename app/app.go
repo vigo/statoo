@@ -96,6 +96,12 @@ type JSONResponse struct {
 	Found     *bool     `json:"found,omitempty"`
 }
 
+func trimSpaces(s []string) {
+	for i, v := range s {
+		s[i] = strings.Trim(v, " ")
+	}
+}
+
 // NewCLIApplication creates new CLIApplication instance
 func NewCLIApplication() *CLIApplication {
 	flag.Usage = func() {
@@ -178,6 +184,7 @@ func (c *CLIApplication) GetResult() error {
 	if len(optHeaders) > 0 {
 		for _, headerValue := range optHeaders {
 			vals := strings.Split(headerValue, ":")
+			trimSpaces(vals)
 			req.Header.Set(vals[0], vals[1])
 		}
 	}
@@ -186,6 +193,7 @@ func (c *CLIApplication) GetResult() error {
 		if strings.Contains(*optBasicAuth, ":") {
 			words := strings.Split(*optBasicAuth, ":")
 			if len(words) == 2 {
+				trimSpaces(words)
 				req.SetBasicAuth(words[0], words[1])
 			}
 		}
