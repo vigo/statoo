@@ -34,30 +34,30 @@ $ brew install statoo
 ```bash
 $ statoo -h
 
-usage: statoo [-flags] URL
+usage: ./statoo [-flags] URL
 
   flags:
 
   -version        display version information (X.X.X)
-  -t, -timeout    default timeout in seconds  (default: 10)
-  -h, -help       display help
-  -json           provides json output
   -verbose        verbose output              (default: false)
   -header         request header, multiple allowed
-  -find           find text in response body if -json is set
-  -auth           basic auth "username:password"
+  -t, -timeout    default timeout in seconds  (default: 10)
+  -h, -help       display help
+  -j, -json       provides json output
+  -f, -find       find text in response body if -json is set
+  -a, -auth       basic auth "username:password"
 
   examples:
   
-  $ statoo "https://ugur.ozyilmazel.com"
-  $ statoo -timeout 30 "https://ugur.ozyilmazel.com"
-  $ statoo -verbose "https://ugur.ozyilmazel.com"
-  $ statoo -json https://vigo.io
-  $ statoo -json -find "python" https://vigo.io
-  $ statoo -header "Authorization: Bearer TOKEN" https://vigo.io
-  $ statoo -header "Authorization: Bearer TOKEN" -header "X-Api-Key: APIKEY" https://vigo.io
-  $ statoo -json -find "Meetup organization" https://vigo.io
-  $ statoo -auth "user:secret" https://vigo.io
+  $ ./statoo "https://ugur.ozyilmazel.com"
+  $ ./statoo -timeout 30 "https://ugur.ozyilmazel.com"
+  $ ./statoo -verbose "https://ugur.ozyilmazel.com"
+  $ ./statoo -json https://vigo.io
+  $ ./statoo -json -find "python" https://vigo.io
+  $ ./statoo -header "Authorization: Bearer TOKEN" https://vigo.io
+  $ ./statoo -header "Authorization: Bearer TOKEN" -header "X-Api-Key: APIKEY" https://vigo.io
+  $ ./statoo -json -find "Meetup organization" https://vigo.io
+  $ ./statoo -auth "user:secret" https://vigo.io
 ```
 
 Let’s try:
@@ -133,6 +133,12 @@ $ statoo -header "Key1: Value1" -header "Key2: Value2" "https://ugur.ozyilmazel.
 It’s better to pipe `-json` output to `jq` or `python -m json.tool` for pretty print :)
 
 That’s it!
+
+Bash completions is available via;
+
+```bash
+$ eval "$(statoo bash-completion)"
+```
 
 ---
 

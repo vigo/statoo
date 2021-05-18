@@ -46,13 +46,13 @@ usage: %[1]s [-flags] URL
   flags:
 
   -version        display version information (%s)
-  -t, -timeout    default timeout in seconds  (default: %d)
-  -h, -help       display help
-  -json           provides json output
   -verbose        verbose output              (default: false)
   -header         request header, multiple allowed
-  -find           find text in response body if -json is set
-  -auth           basic auth "username:password"
+  -t, -timeout    default timeout in seconds  (default: %d)
+  -h, -help       display help
+  -j, -json       provides json output
+  -f, -find       find text in response body if -json is set
+  -a, -auth       basic auth "username:password"
 
   examples:
   
@@ -67,6 +67,14 @@ usage: %[1]s [-flags] URL
   $ %[1]s -auth "user:secret" https://vigo.io
 
 `
+	bashCompletion = `__statoo_comp()
+{
+    local cur next
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    opts="-a -auth -f -find -header -h -help -j -json -t -timeout -verbose -version"
+    COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+}
+complete -F __statoo_comp statoo`
 )
 
 type headersFlag []string
@@ -113,12 +121,19 @@ func NewCLIApplication() *CLIApplication {
 
 	optVersionInformation = flag.Bool("version", false, "")
 	optVerboseOutput = flag.Bool("verbose", false, "")
-	optJSONOutput = flag.Bool("json", false, "")
-	optTimeout = flag.Int("timeout", defTimeout, "")
-	optFind = flag.String("find", "", "")
-	optBasicAuth = flag.String("auth", "", "")
 
+	optJSONOutput = flag.Bool("json", false, "")
+	flag.BoolVar(optJSONOutput, "j", false, "")
+
+	optTimeout = flag.Int("timeout", defTimeout, "")
 	flag.IntVar(optTimeout, "t", defTimeout, "")
+
+	optFind = flag.String("find", "", "")
+	flag.StringVar(optFind, "f", "", "")
+
+	optBasicAuth = flag.String("auth", "", "")
+	flag.StringVar(optBasicAuth, "a", "", "")
+
 	flag.Var(&optHeaders, "header", "")
 
 	flag.Parse()
@@ -134,6 +149,11 @@ func NewCLIApplication() *CLIApplication {
 func (c *CLIApplication) Run() error {
 	if *optVersionInformation {
 		fmt.Fprintln(c.Out, version)
+		return nil
+	}
+
+	if argURL == "bash-completion" {
+		fmt.Fprintln(c.Out, bashCompletion)
 		return nil
 	}
 
