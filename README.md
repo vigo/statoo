@@ -4,6 +4,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/vigo/statoo)](https://goreportcard.com/report/github.com/vigo/statoo)
 [![Build Status](https://travis-ci.org/vigo/statoo.svg?branch=main)](https://travis-ci.org/vigo/statoo)
 ![Go Build Status](https://github.com/vigo/statoo/actions/workflows/go.yml/badge.svg)
+![Test Coverage](https://img.shields.io/badge/coverage-81.2%25-orange.svg)
 
 # Statoo
 
@@ -147,12 +148,14 @@ $ eval "$(statoo bash-completion)"
 ```bash
 $ rake -T
 
-rake default            # show avaliable tasks (default task)
-rake docker:build       # Build
-rake docker:rmi         # Delete image
-rake docker:run         # Run
-rake release[revision]  # Release new version major,minor,patch, default: patch
-rake test[verbose]      # run tests
+rake default               # show avaliable tasks (default task)
+rake docker:build          # Build
+rake docker:rmi            # Delete image
+rake docker:run            # Run
+rake release[revision]     # Release new version major,minor,patch, default: patch
+rake test:run[verbose]     # run tests, generate coverage
+rake test:show_coverage    # show coverage after running tests
+rake test:update_coverage  # update coverage value in README
 ```
 
 ---

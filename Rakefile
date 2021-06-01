@@ -31,6 +31,10 @@ task :has_bumpversion do
   Rake::Task['command_exists'].invoke('bumpversion')
 end
 
+task :has_gsed do
+  Rake::Task['command_exists'].invoke('gsed')
+end
+
 task :bump, [:revision] => [:has_bumpversion] do |_, args|
   args.with_defaults(revision: 'patch')
   unless AVAILABLE_REVISIONS.include?(args.revision)
@@ -57,11 +61,30 @@ end
 
 # run tests
 # -----------------------------------------------------------------------------
-desc 'run tests'
-task :test, [:verbose] do |_, args|
-  args.with_defaults(verbose: '')
-  system "go test #{args.verbose} ./..."
+namespace :test do
+  desc 'run tests, generate coverage'
+  task :run, [:verbose] do |_, args|
+    args.with_defaults(verbose: '')
+    system "go test -count=1 #{args.verbose} -coverprofile=coverage.out ./..."
+  end
+  
+  desc "show coverage after running tests"
+  task :show_coverage do
+    Rake::Task["test:run"].invoke('-v')
+    system "go tool cover -html=coverage.out"
+  end
+  
+  desc "update coverage value in README"
+  task :update_coverage => [:has_gsed] do
+    coverage_value = `go test -count=1 -coverprofile=coverage.out ./... | grep 'ok'`.chomp.split("\t")
+    coverage_ratio = coverage_value.last.split[1].gsub!('%', '%25')
+    system %{
+      gsed -i -r 's/coverage-[0-9\.\%]+/coverage-#{coverage_ratio}/' README.md &&
+      echo "new coverage is set to: #{coverage_ratio}"
+    }
+  end
 end
+
 # -----------------------------------------------------------------------------
 
 

@@ -16,19 +16,66 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"time"
+
+	"github.com/vigo/statoo/app/version"
 )
 
-const version = "1.1.3"
 const defTimeout = 10
+
+var _ flag.Value = (*headersFlag)(nil)
+var _ flag.Value = (*basicAuthFlag)(nil)
+
+type headersFlag []string
+
+func (f *headersFlag) String() string {
+	return fmt.Sprintf("%s", *f)
+}
+
+func (f *headersFlag) Set(value string) error {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return errors.New("header should not be empty")
+	}
+	if strings.Count(value, ":") != 1 {
+		return fmt.Errorf("invalind header data: %s", value)
+	}
+	if len(strings.FieldsFunc(value, func(c rune) bool { return c == ':' })) != 2 {
+		return fmt.Errorf("invalind header data: %s", value)
+	}
+	*f = append(*f, value)
+	return nil
+}
+
+type basicAuthFlag string
+
+func (f *basicAuthFlag) Set(value string) error {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return errors.New("auth flag should not be empty")
+	}
+	if strings.Count(value, ":") != 1 {
+		return fmt.Errorf("invalind auth data: %s", value)
+	}
+	if len(strings.FieldsFunc(value, func(c rune) bool { return c == ':' })) != 2 {
+		return fmt.Errorf("invalind auth data: %s", value)
+	}
+
+	*f = basicAuthFlag(value)
+	return nil
+}
+
+func (f *basicAuthFlag) String() string {
+	return string(*f)
+}
 
 var (
 	argURL                string
@@ -38,7 +85,7 @@ var (
 	optJSONOutput         *bool
 	optHeaders            headersFlag
 	optFind               *string
-	optBasicAuth          *string
+	optBasicAuth          basicAuthFlag
 
 	usage = `
 usage: %[1]s [-flags] URL
@@ -47,7 +94,7 @@ usage: %[1]s [-flags] URL
 
   -version        display version information (%s)
   -verbose        verbose output              (default: false)
-  -header         request header, multiple allowed
+  -header         request header, multiple allowed, "Key: Value"
   -t, -timeout    default timeout in seconds  (default: %d)
   -h, -help       display help
   -j, -json       provides json output
@@ -77,17 +124,6 @@ usage: %[1]s [-flags] URL
 complete -F __statoo_comp statoo`
 )
 
-type headersFlag []string
-
-func (h *headersFlag) String() string {
-	return "headers"
-}
-
-func (h *headersFlag) Set(value string) error {
-	*h = append(*h, strings.TrimSpace(value))
-	return nil
-}
-
 // CLIApplication represents app structure
 type CLIApplication struct {
 	Out io.Writer
@@ -106,7 +142,7 @@ type JSONResponse struct {
 
 func trimSpaces(s []string) {
 	for i, v := range s {
-		s[i] = strings.Trim(v, " ")
+		s[i] = strings.TrimSpace(v)
 	}
 }
 
@@ -115,26 +151,30 @@ func NewCLIApplication() *CLIApplication {
 	flag.Usage = func() {
 		// w/o os.Stdout, you need to pipe out via
 		// cmd &> /path/to/file
-		fmt.Fprintf(os.Stdout, usage, os.Args[0], version, defTimeout)
+		fmt.Fprintf(os.Stdout, usage, os.Args[0], version.Version, defTimeout)
 		os.Exit(0)
 	}
 
-	optVersionInformation = flag.Bool("version", false, "")
-	optVerboseOutput = flag.Bool("verbose", false, "")
+	optVersionInformation = flag.Bool("version", false, fmt.Sprintf("display version information (%s)", version.Version))
+	optVerboseOutput = flag.Bool("verbose", false, "verbose output")
 
-	optJSONOutput = flag.Bool("json", false, "")
-	flag.BoolVar(optJSONOutput, "j", false, "")
+	helpJSON := "provides json output"
+	optJSONOutput = flag.Bool("json", false, helpJSON)
+	flag.BoolVar(optJSONOutput, "j", false, helpJSON+" (short)")
 
-	optTimeout = flag.Int("timeout", defTimeout, "")
-	flag.IntVar(optTimeout, "t", defTimeout, "")
+	helpTimeout := "default timeout in seconds"
+	optTimeout = flag.Int("timeout", defTimeout, helpTimeout)
+	flag.IntVar(optTimeout, "t", defTimeout, helpTimeout+" (short)")
 
-	optFind = flag.String("find", "", "")
-	flag.StringVar(optFind, "f", "", "")
-
-	optBasicAuth = flag.String("auth", "", "")
-	flag.StringVar(optBasicAuth, "a", "", "")
+	helpFind := "find text in response body if -json is set"
+	optFind = flag.String("find", "", helpFind)
+	flag.StringVar(optFind, "f", "", helpFind+" (short)")
 
 	flag.Var(&optHeaders, "header", "")
+
+	helpBasicAuth := "basic auth \"username:password\""
+	flag.Var(&optBasicAuth, "auth", helpBasicAuth)
+	flag.Var(&optBasicAuth, "a", helpBasicAuth+" (short)")
 
 	flag.Parse()
 
@@ -148,7 +188,7 @@ func NewCLIApplication() *CLIApplication {
 // Run executes main application
 func (c *CLIApplication) Run() error {
 	if *optVersionInformation {
-		fmt.Fprintln(c.Out, version)
+		fmt.Fprintln(c.Out, version.Version)
 		return nil
 	}
 
@@ -192,7 +232,8 @@ func (c *CLIApplication) GetResult() error {
 		Timeout:   timeout,
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", argURL, nil)
 	if err != nil {
@@ -209,14 +250,10 @@ func (c *CLIApplication) GetResult() error {
 		}
 	}
 
-	if *optBasicAuth != "" {
-		if strings.Contains(*optBasicAuth, ":") {
-			words := strings.Split(*optBasicAuth, ":")
-			if len(words) == 2 {
-				trimSpaces(words)
-				req.SetBasicAuth(words[0], words[1])
-			}
-		}
+	if optBasicAuth.String() != "" {
+		words := strings.Split(optBasicAuth.String(), ":")
+		trimSpaces(words) // remove spaces, foo      :  bar => foo:bar
+		req.SetBasicAuth(words[0], words[1])
 	}
 
 	start := time.Now()
@@ -231,12 +268,6 @@ func (c *CLIApplication) GetResult() error {
 	}
 
 	if *optJSONOutput {
-		contentLength := 0
-
-		if _, ok := resp.Header["Content-Length"]; ok {
-			contentLength, _ = strconv.Atoi(resp.Header["Content-Length"][0])
-		}
-
 		js := &JSONResponse{
 			URL:       argURL,
 			Status:    resp.StatusCode,
@@ -244,7 +275,6 @@ func (c *CLIApplication) GetResult() error {
 			Elapsed:   float64(elapsed) / float64(time.Millisecond),
 			Find:      nil,
 			Found:     nil,
-			Length:    contentLength,
 		}
 
 		if *optFind != "" {
@@ -267,6 +297,7 @@ func (c *CLIApplication) GetResult() error {
 				js.Find = optFind
 				js.Found = &boolFound
 			}
+			js.Length = len(body)
 		}
 
 		j, err := json.Marshal(js)
