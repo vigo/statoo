@@ -28,7 +28,7 @@ jobs:
       run: go mod download
 
     - name: Run tests
-      run: go test -v ./...
+      run: go test -count=1 -coverprofile=coverage.out ./...
 
     - name: Build app
       run: go build -v .
