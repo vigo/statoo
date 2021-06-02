@@ -1,4 +1,4 @@
-![Version](https://img.shields.io/badge/version-1.1.3-orange.svg)
+![Version](https://img.shields.io/badge/version-1.2.0-orange.svg)
 ![Go](https://img.shields.io/badge/go-1.16-black.svg)
 [![Documentation](https://godoc.org/github.com/vigo/statoo?status.svg)](https://pkg.go.dev/github.com/vigo/statoo)
 [![Go Report Card](https://goreportcard.com/badge/github.com/vigo/statoo)](https://goreportcard.com/report/github.com/vigo/statoo)
