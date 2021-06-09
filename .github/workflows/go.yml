@@ -39,7 +39,7 @@ jobs:
       env:
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
       with:
-        channel: '#team-devops'
+        channel: '#github'
         username: 'github'
         icon_url: 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png'
         color: '#00FFAA'

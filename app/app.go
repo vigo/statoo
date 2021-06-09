@@ -31,16 +31,18 @@ import (
 
 const defTimeout = 10
 
-var _ flag.Value = (*headersFlag)(nil)
-var _ flag.Value = (*basicAuthFlag)(nil)
+var _ flag.Value = (*HeadersFlag)(nil)
+var _ flag.Value = (*BasicAuthFlag)(nil)
 
-type headersFlag []string
+// HeadersFlag ...
+type HeadersFlag []string
 
-func (f *headersFlag) String() string {
+func (f *HeadersFlag) String() string {
 	return fmt.Sprintf("%s", *f)
 }
 
-func (f *headersFlag) Set(value string) error {
+// Set ...
+func (f *HeadersFlag) Set(value string) error {
 	value = strings.TrimSpace(value)
 	if value == "" {
 		return errors.New("header should not be empty")
@@ -55,9 +57,11 @@ func (f *headersFlag) Set(value string) error {
 	return nil
 }
 
-type basicAuthFlag string
+// BasicAuthFlag ...
+type BasicAuthFlag string
 
-func (f *basicAuthFlag) Set(value string) error {
+// Set ...
+func (f *BasicAuthFlag) Set(value string) error {
 	value = strings.TrimSpace(value)
 	if value == "" {
 		return errors.New("auth flag should not be empty")
@@ -69,23 +73,37 @@ func (f *basicAuthFlag) Set(value string) error {
 		return fmt.Errorf("invalind auth data: %s", value)
 	}
 
-	*f = basicAuthFlag(value)
+	*f = BasicAuthFlag(value)
 	return nil
 }
 
-func (f *basicAuthFlag) String() string {
+func (f *BasicAuthFlag) String() string {
 	return string(*f)
 }
 
 var (
-	argURL                string
-	optVersionInformation *bool
-	optTimeout            *int
-	optVerboseOutput      *bool
-	optJSONOutput         *bool
-	optHeaders            headersFlag
-	optFind               *string
-	optBasicAuth          basicAuthFlag
+	// ArgURL ...
+	ArgURL string
+
+	// OptVersionInformation ...
+	OptVersionInformation *bool
+
+	// OptTimeout ...
+	OptTimeout *int
+
+	// OptVerboseOutput ...
+	OptVerboseOutput *bool
+
+	// OptJSONOutput ...
+	OptJSONOutput *bool
+
+	// OptHeaders ...
+	OptHeaders HeadersFlag
+	// OptFind ...
+	OptFind *string
+
+	// OptBasicAuth ...
+	OptBasicAuth BasicAuthFlag
 
 	usage = `
 usage: %[1]s [-flags] URL
@@ -155,30 +173,30 @@ func NewCLIApplication() *CLIApplication {
 		os.Exit(0)
 	}
 
-	optVersionInformation = flag.Bool("version", false, fmt.Sprintf("display version information (%s)", version.Version))
-	optVerboseOutput = flag.Bool("verbose", false, "verbose output")
+	OptVersionInformation = flag.Bool("version", false, fmt.Sprintf("display version information (%s)", version.Version))
+	OptVerboseOutput = flag.Bool("verbose", false, "verbose output")
 
 	helpJSON := "provides json output"
-	optJSONOutput = flag.Bool("json", false, helpJSON)
-	flag.BoolVar(optJSONOutput, "j", false, helpJSON+" (short)")
+	OptJSONOutput = flag.Bool("json", false, helpJSON)
+	flag.BoolVar(OptJSONOutput, "j", false, helpJSON+" (short)")
 
 	helpTimeout := "default timeout in seconds"
-	optTimeout = flag.Int("timeout", defTimeout, helpTimeout)
-	flag.IntVar(optTimeout, "t", defTimeout, helpTimeout+" (short)")
+	OptTimeout = flag.Int("timeout", defTimeout, helpTimeout)
+	flag.IntVar(OptTimeout, "t", defTimeout, helpTimeout+" (short)")
 
 	helpFind := "find text in response body if -json is set"
-	optFind = flag.String("find", "", helpFind)
-	flag.StringVar(optFind, "f", "", helpFind+" (short)")
+	OptFind = flag.String("find", "", helpFind)
+	flag.StringVar(OptFind, "f", "", helpFind+" (short)")
 
-	flag.Var(&optHeaders, "header", "")
+	flag.Var(&OptHeaders, "header", "")
 
 	helpBasicAuth := "basic auth \"username:password\""
-	flag.Var(&optBasicAuth, "auth", helpBasicAuth)
-	flag.Var(&optBasicAuth, "a", helpBasicAuth+" (short)")
+	flag.Var(&OptBasicAuth, "auth", helpBasicAuth)
+	flag.Var(&OptBasicAuth, "a", helpBasicAuth+" (short)")
 
 	flag.Parse()
 
-	argURL = flag.Arg(0)
+	ArgURL = flag.Arg(0)
 
 	return &CLIApplication{
 		Out: os.Stdout,
@@ -187,12 +205,12 @@ func NewCLIApplication() *CLIApplication {
 
 // Run executes main application
 func (c *CLIApplication) Run() error {
-	if *optVersionInformation {
+	if *OptVersionInformation {
 		fmt.Fprintln(c.Out, version.Version)
 		return nil
 	}
 
-	if argURL == "bash-completion" {
+	if ArgURL == "bash-completion" {
 		fmt.Fprintln(c.Out, bashCompletion)
 		return nil
 	}
@@ -206,13 +224,13 @@ func (c *CLIApplication) Run() error {
 
 // Validate runs validations for flags
 func (c *CLIApplication) Validate() error {
-	_, err := url.ParseRequestURI(argURL)
+	_, err := url.ParseRequestURI(ArgURL)
 	if err != nil {
 		return fmt.Errorf(err.Error())
 	}
 
-	if *optTimeout > 100 || *optTimeout < 1 {
-		return fmt.Errorf("invalid timeout value: %d", *optTimeout)
+	if *OptTimeout > 100 || *OptTimeout < 1 {
+		return fmt.Errorf("invalid timeout value: %d", *OptTimeout)
 	}
 	return c.GetResult()
 }
@@ -226,7 +244,7 @@ func (c *CLIApplication) GetResult() error {
 		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
 	}
 
-	timeout := time.Duration(*optTimeout) * time.Second
+	timeout := time.Duration(*OptTimeout) * time.Second
 	client := &http.Client{
 		Transport: tr,
 		Timeout:   timeout,
@@ -235,23 +253,23 @@ func (c *CLIApplication) GetResult() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", argURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", ArgURL, nil)
 	if err != nil {
 		return fmt.Errorf("error: %v", err)
 	}
 
 	req.Header.Set("Accept-Encoding", "gzip")
 
-	if len(optHeaders) > 0 {
-		for _, headerValue := range optHeaders {
+	if len(OptHeaders) > 0 {
+		for _, headerValue := range OptHeaders {
 			vals := strings.Split(headerValue, ":")
 			trimSpaces(vals)
 			req.Header.Set(vals[0], vals[1])
 		}
 	}
 
-	if optBasicAuth.String() != "" {
-		words := strings.Split(optBasicAuth.String(), ":")
+	if OptBasicAuth.String() != "" {
+		words := strings.Split(OptBasicAuth.String(), ":")
 		trimSpaces(words) // remove spaces, foo      :  bar => foo:bar
 		req.SetBasicAuth(words[0], words[1])
 	}
@@ -267,9 +285,9 @@ func (c *CLIApplication) GetResult() error {
 		defer resp.Body.Close()
 	}
 
-	if *optJSONOutput {
+	if *OptJSONOutput {
 		js := &JSONResponse{
-			URL:       argURL,
+			URL:       ArgURL,
 			Status:    resp.StatusCode,
 			CheckedAt: time.Now().UTC(),
 			Elapsed:   float64(elapsed) / float64(time.Millisecond),
@@ -277,7 +295,7 @@ func (c *CLIApplication) GetResult() error {
 			Found:     nil,
 		}
 
-		if *optFind != "" {
+		if *OptFind != "" {
 			var bodyReader io.ReadCloser
 
 			switch resp.Header.Get("Content-Encoding") {
@@ -293,8 +311,8 @@ func (c *CLIApplication) GetResult() error {
 
 			body, err := io.ReadAll(bodyReader)
 			if err == nil {
-				boolFound := strings.Contains(string(body), *optFind)
-				js.Find = optFind
+				boolFound := strings.Contains(string(body), *OptFind)
+				js.Find = OptFind
 				js.Found = &boolFound
 			}
 			js.Length = len(body)
@@ -311,8 +329,8 @@ func (c *CLIApplication) GetResult() error {
 		}
 		return nil
 	}
-	if *optVerboseOutput {
-		fmt.Fprintf(c.Out, "%s -> ", argURL)
+	if *OptVerboseOutput {
+		fmt.Fprintf(c.Out, "%s -> ", ArgURL)
 	}
 	fmt.Fprintf(c.Out, "%d\n", resp.StatusCode)
 	return nil

@@ -1,4 +1,4 @@
-package app
+package app_test
 
 import (
 	"bytes"
@@ -12,12 +12,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/vigo/statoo/app"
 	"github.com/vigo/statoo/app/version"
 )
 
 func TestCustomHeadersFlag(t *testing.T) {
 	var flags flag.FlagSet
-	var h headersFlag
+	var h app.HeadersFlag
 
 	flags.Init("test", flag.ContinueOnError)
 	flags.Var(&h, "header", "usage")
@@ -37,7 +38,7 @@ func TestCustomHeadersFlag(t *testing.T) {
 
 func TestCustomAuthFlag(t *testing.T) {
 	var flags flag.FlagSet
-	var a basicAuthFlag
+	var a app.BasicAuthFlag
 
 	flags.Init("test", flag.ContinueOnError)
 	flags.Var(&a, "auth", "usage")
@@ -79,17 +80,17 @@ func TestResponse(t *testing.T) {
 
 	handlerWithGZ := gzipWrapper(handler)
 
-	cmd := NewCLIApplication()
+	cmd := app.NewCLIApplication()
 
 	t.Run("test fake 200 reponse", func(t *testing.T) {
 		cmd.Out = new(bytes.Buffer)
 		ts := httptest.NewServer(handler)
 
-		argURL = ts.URL
+		app.ArgURL = ts.URL
 		if err := cmd.Run(); err != nil {
 			t.Error(err)
 		}
-		*optJSONOutput = false
+		*app.OptJSONOutput = false
 	})
 
 	t.Run("json reponse", func(t *testing.T) {
@@ -97,20 +98,20 @@ func TestResponse(t *testing.T) {
 		cmd.Out = buff
 
 		ts := httptest.NewServer(handler)
-		argURL = ts.URL
-		*optJSONOutput = true
+		app.ArgURL = ts.URL
+		*app.OptJSONOutput = true
 
 		if err := cmd.Run(); err != nil {
 			t.Error(err)
 		}
 
 		body, _ := ioutil.ReadAll(buff)
-		jr := new(JSONResponse)
+		jr := new(app.JSONResponse)
 		_ = json.Unmarshal(body, jr)
 		if got := jr.Status; got != 200 {
 			t.Errorf("want 200, got: %v", got)
 		}
-		*optJSONOutput = false
+		*app.OptJSONOutput = false
 	})
 
 	t.Run("find text", func(t *testing.T) {
@@ -118,9 +119,9 @@ func TestResponse(t *testing.T) {
 		cmd.Out = buff
 
 		ts := httptest.NewServer(handler)
-		argURL = ts.URL
-		*optJSONOutput = true
-		*optFind = "hello"
+		app.ArgURL = ts.URL
+		*app.OptJSONOutput = true
+		*app.OptFind = "hello"
 
 		if err := cmd.Run(); err != nil {
 			t.Error(err)
@@ -128,7 +129,7 @@ func TestResponse(t *testing.T) {
 
 		body, _ := ioutil.ReadAll(buff)
 
-		jr := new(JSONResponse)
+		jr := new(app.JSONResponse)
 		_ = json.Unmarshal(body, jr)
 		if got := jr.Status; got != 200 {
 			t.Errorf("want 200, got: %v", got)
@@ -142,8 +143,8 @@ func TestResponse(t *testing.T) {
 		if got := *jr.Find; got != "hello" {
 			t.Errorf("want true, got: %v", got)
 		}
-		*optJSONOutput = false
-		*optFind = ""
+		*app.OptJSONOutput = false
+		*app.OptFind = ""
 	})
 
 	t.Run("gzip handler and find text", func(t *testing.T) {
@@ -151,25 +152,25 @@ func TestResponse(t *testing.T) {
 		cmd.Out = buff
 
 		ts := httptest.NewServer(handlerWithGZ)
-		argURL = ts.URL
+		app.ArgURL = ts.URL
 
-		*optJSONOutput = true
-		*optFind = "hello"
+		*app.OptJSONOutput = true
+		*app.OptFind = "hello"
 
 		if err := cmd.Run(); err != nil {
 			t.Error(err)
 		}
 
 		body, _ := ioutil.ReadAll(buff)
-		jr := new(JSONResponse)
+		jr := new(app.JSONResponse)
 		_ = json.Unmarshal(body, jr)
 
-		*optJSONOutput = false
-		optFind = nil
+		*app.OptJSONOutput = false
+		app.OptFind = nil
 	})
 
 	t.Run("test empty URL arg", func(t *testing.T) {
-		argURL = ""
+		app.ArgURL = ""
 		cmd.Out = new(bytes.Buffer)
 		if got := cmd.Run(); got.Error() != "parse \"\": empty url" {
 			t.Errorf("got: %v", got)
@@ -177,7 +178,7 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("test URL w/o prefix", func(t *testing.T) {
-		argURL = "vigo.io"
+		app.ArgURL = "vigo.io"
 		cmd.Out = new(bytes.Buffer)
 		if got := cmd.Run(); got.Error() != "parse \"vigo.io\": invalid URI for request" {
 			t.Errorf("got: %v", got)
@@ -185,8 +186,8 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("set errorious timeout", func(t *testing.T) {
-		*optTimeout = 200
-		argURL = "https://vigo.io"
+		*app.OptTimeout = 200
+		app.ArgURL = "https://vigo.io"
 		cmd.Out = new(bytes.Buffer)
 		if got := cmd.Run(); got.Error() != "invalid timeout value: 200" {
 			t.Errorf("want nil, got: %v", got)
@@ -194,8 +195,8 @@ func TestResponse(t *testing.T) {
 	})
 
 	t.Run("get version", func(t *testing.T) {
-		*optVersionInformation = true
-		argURL = ""
+		*app.OptVersionInformation = true
+		app.ArgURL = ""
 
 		buff := new(bytes.Buffer)
 		cmd.Out = buff
@@ -207,11 +208,11 @@ func TestResponse(t *testing.T) {
 		if got != version.Version {
 			t.Errorf("want %v, got: %v", version.Version, got)
 		}
-		*optVersionInformation = false
+		*app.OptVersionInformation = false
 	})
 
 	t.Run("bash completion", func(t *testing.T) {
-		argURL = "bash-completion"
+		app.ArgURL = "bash-completion"
 
 		buff := new(bytes.Buffer)
 		cmd.Out = buff
@@ -222,6 +223,6 @@ func TestResponse(t *testing.T) {
 		if !strings.Contains(got, "__statoo_comp()") {
 			t.Errorf("result should contain __statoo_comp() got: %v", got)
 		}
-		argURL = ""
+		app.ArgURL = ""
 	})
 }
