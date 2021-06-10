@@ -82,27 +82,27 @@ func (f *BasicAuthFlag) String() string {
 }
 
 var (
-	// ArgURL ...
+	// ArgURL holds URL input from command-line
 	ArgURL string
 
-	// OptVersionInformation ...
+	// OptVersionInformation holds boolean for displaying version information
 	OptVersionInformation *bool
 
-	// OptTimeout ...
+	// OptTimeout holds default timeout for network transport operations
 	OptTimeout *int
 
-	// OptVerboseOutput ...
+	// OptVerboseOutput holds boolean for displaying detailed output
 	OptVerboseOutput *bool
 
-	// OptJSONOutput ...
+	// OptJSONOutput holds boolean for json response instead of text
 	OptJSONOutput *bool
 
-	// OptHeaders ...
+	// OptHeaders holds custom request header key:value
 	OptHeaders HeadersFlag
-	// OptFind ...
+	// OptFind holds lookup string in the body of the response
 	OptFind *string
 
-	// OptBasicAuth ...
+	// OptBasicAuth holds basic auth key:value credentials
 	OptBasicAuth BasicAuthFlag
 
 	usage = `
@@ -250,7 +250,7 @@ func (c *CLIApplication) GetResult() error {
 		Timeout:   timeout,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", ArgURL, nil)

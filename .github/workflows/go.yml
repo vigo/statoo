@@ -43,5 +43,4 @@ jobs:
         username: 'github'
         icon_url: 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png'
         color: '#00FFAA'
-        image_url: 'https://storage.googleapis.com/slack-images-cyclops/ci/It_Compiles_Ship_It.png'
         title: ${{ github.repository }} -> ${{ github.sha }}
