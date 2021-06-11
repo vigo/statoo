@@ -177,7 +177,7 @@ $ docker run -i -t statoo:latest statoo -json -find "Meetup organization" https:
 
 ---
 
-## Contributer(s)
+## Contributor(s)
 
 * [Uğur "vigo" Özyılmazel](https://github.com/vigo) - Creator, maintainer
 
