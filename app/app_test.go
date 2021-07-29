@@ -67,7 +67,7 @@ func gzipWrapper(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Encoding", "gzip")
 		gz := gzip.NewWriter(w)
-		defer gz.Close()
+		defer func() { _ = gz.Close() }()
 		gzw := gzipResponseWriter{Writer: gz, ResponseWriter: w}
 		handler.ServeHTTP(gzw, r)
 	})
