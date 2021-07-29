@@ -13,7 +13,6 @@ package app
 
 import (
 	"compress/gzip"
-	"context"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
@@ -215,34 +214,29 @@ func (c *CLIApplication) Run() error {
 		return nil
 	}
 
-	if err := c.Validate(); err != nil {
-		return err
-	}
-
-	return nil
+	return c.Validate()
 }
 
 // Validate runs validations for flags
 func (c *CLIApplication) Validate() error {
 	_, err := url.ParseRequestURI(ArgURL)
 	if err != nil {
-		return fmt.Errorf(err.Error())
+		return fmt.Errorf("error: %v", err)
 	}
 
 	if *OptTimeout > 100 || *OptTimeout < 1 {
 		return fmt.Errorf("invalid timeout value: %d", *OptTimeout)
 	}
+
 	return c.GetResult()
 }
 
 // GetResult fetches the status information of given URL
 func (c *CLIApplication) GetResult() error {
-	tr := &http.Transport{
-		MaxIdleConns:       10,
-		IdleConnTimeout:    30 * time.Second,
-		DisableCompression: true,
-		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
-	}
+	tr := http.DefaultTransport.(*http.Transport).Clone()
+	tr.MaxIdleConns = 10
+	tr.IdleConnTimeout = 30 * time.Second
+	tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	timeout := time.Duration(*OptTimeout) * time.Second
 	client := &http.Client{
@@ -250,10 +244,7 @@ func (c *CLIApplication) GetResult() error {
 		Timeout:   timeout,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, "GET", ArgURL, nil)
+	req, err := http.NewRequest("GET", ArgURL, nil)
 	if err != nil {
 		return fmt.Errorf("error: %v", err)
 	}
@@ -280,10 +271,7 @@ func (c *CLIApplication) GetResult() error {
 		return fmt.Errorf("error: %v", err)
 	}
 	elapsed := time.Since(start)
-
-	if resp.Body != nil {
-		defer resp.Body.Close()
-	}
+	defer func() { _ = resp.Body.Close() }()
 
 	if *OptJSONOutput {
 		js := &JSONResponse{
@@ -304,7 +292,7 @@ func (c *CLIApplication) GetResult() error {
 				if err != nil {
 					return fmt.Errorf("body read (gzip) error: %v", err)
 				}
-				defer bodyReader.Close()
+				defer func() { _ = bodyReader.Close() }()
 			default:
 				bodyReader = resp.Body
 			}
