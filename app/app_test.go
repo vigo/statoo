@@ -82,7 +82,7 @@ func TestResponse(t *testing.T) {
 
 	cmd := app.NewCLIApplication()
 
-	t.Run("test fake 200 reponse", func(t *testing.T) {
+	t.Run("test fake 200 response", func(t *testing.T) {
 		cmd.Out = new(bytes.Buffer)
 		ts := httptest.NewServer(handler)
 
@@ -93,7 +93,7 @@ func TestResponse(t *testing.T) {
 		*app.OptJSONOutput = false
 	})
 
-	t.Run("json reponse", func(t *testing.T) {
+	t.Run("json response", func(t *testing.T) {
 		buff := new(bytes.Buffer)
 		cmd.Out = buff
 
