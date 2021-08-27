@@ -4,7 +4,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/vigo/statoo)](https://goreportcard.com/report/github.com/vigo/statoo)
 [![Build Status](https://travis-ci.org/vigo/statoo.svg?branch=main)](https://travis-ci.org/vigo/statoo)
 ![Go Build Status](https://github.com/vigo/statoo/actions/workflows/go.yml/badge.svg)
-![Test Coverage](https://img.shields.io/badge/coverage-81.2%25-orange.svg)
+![Test Coverage](https://img.shields.io/badge/coverage-80.2%25-orange.svg)
 
 # Statoo
 
