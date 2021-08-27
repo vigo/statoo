@@ -1,4 +1,4 @@
 package version
 
 // Version is the current version of statoo
-const Version string = "1.2.1"
+const Version string = "1.2.2"
