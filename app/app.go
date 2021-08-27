@@ -13,7 +13,6 @@ package app
 
 import (
 	"compress/gzip"
-	"context"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
@@ -214,12 +213,7 @@ func (c *CLIApplication) Run() error {
 		fmt.Fprintln(c.Out, bashCompletion)
 		return nil
 	}
-
-	if err := c.Validate(); err != nil {
-		return err
-	}
-
-	return nil
+	return c.Validate()
 }
 
 // Validate runs validations for flags
@@ -237,12 +231,11 @@ func (c *CLIApplication) Validate() error {
 
 // GetResult fetches the status information of given URL
 func (c *CLIApplication) GetResult() error {
-	tr := &http.Transport{
-		MaxIdleConns:       10,
-		IdleConnTimeout:    30 * time.Second,
-		DisableCompression: true,
-		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
-	}
+	tr := http.DefaultTransport.(*http.Transport).Clone()
+	tr.MaxIdleConns = 10
+	tr.IdleConnTimeout = 30 * time.Second
+	tr.DisableCompression = true
+	tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	timeout := time.Duration(*OptTimeout) * time.Second
 	client := &http.Client{
@@ -250,10 +243,7 @@ func (c *CLIApplication) GetResult() error {
 		Timeout:   timeout,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, "GET", ArgURL, nil)
+	req, err := http.NewRequest("GET", ArgURL, nil)
 	if err != nil {
 		return fmt.Errorf("error: %v", err)
 	}
@@ -282,7 +272,11 @@ func (c *CLIApplication) GetResult() error {
 	elapsed := time.Since(start)
 
 	if resp.Body != nil {
-		defer resp.Body.Close()
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				fmt.Fprintln(os.Stderr, err.Error())
+			}
+		}()
 	}
 
 	if *OptJSONOutput {
@@ -304,7 +298,11 @@ func (c *CLIApplication) GetResult() error {
 				if err != nil {
 					return fmt.Errorf("body read (gzip) error: %v", err)
 				}
-				defer bodyReader.Close()
+				defer func() {
+					if err := bodyReader.Close(); err != nil {
+						fmt.Fprintln(os.Stderr, err.Error())
+					}
+				}()
 			default:
 				bodyReader = resp.Body
 			}

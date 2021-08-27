@@ -5,10 +5,12 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -67,7 +69,11 @@ func gzipWrapper(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Encoding", "gzip")
 		gz := gzip.NewWriter(w)
-		defer gz.Close()
+		defer func() {
+			if err := gz.Close(); err != nil {
+				fmt.Fprintln(os.Stderr, err.Error())
+			}
+		}()
 		gzw := gzipResponseWriter{Writer: gz, ResponseWriter: w}
 		handler.ServeHTTP(gzw, r)
 	})
@@ -82,7 +88,7 @@ func TestResponse(t *testing.T) {
 
 	cmd := app.NewCLIApplication()
 
-	t.Run("test fake 200 reponse", func(t *testing.T) {
+	t.Run("test fake 200 response", func(t *testing.T) {
 		cmd.Out = new(bytes.Buffer)
 		ts := httptest.NewServer(handler)
 
@@ -93,7 +99,7 @@ func TestResponse(t *testing.T) {
 		*app.OptJSONOutput = false
 	})
 
-	t.Run("json reponse", func(t *testing.T) {
+	t.Run("json response", func(t *testing.T) {
 		buff := new(bytes.Buffer)
 		cmd.Out = buff
 
