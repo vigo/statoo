@@ -20,7 +20,7 @@ you can make the same kind of request and get a kind-of same response since
 You can install from the source;
 
 ```bash
-$ go get github.com/vigo/statoo
+go install github.com/vigo/statoo@latest
 ```
 
 or, you can install from `brew`:
