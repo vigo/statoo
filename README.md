@@ -26,15 +26,17 @@ go install github.com/vigo/statoo@latest
 or, you can install from `brew`:
 
 ```bash
-$ brew tap vigo/statoo
-$ brew install statoo
+brew tap vigo/statoo
+brew install statoo
 ```
 
 ## Usage:
 
 ```bash
-$ statoo -h
+statoo -h
+```
 
+```bash
 usage: ./statoo [-flags] URL
 
   flags:
@@ -64,17 +66,19 @@ usage: ./statoo [-flags] URL
 Let’s try:
 
 ```bash
-$ statoo "https://ugur.ozyilmazel.com"
-200
+statoo "https://ugur.ozyilmazel.com"
+# 200
+```
 
-$ statoo -verbose "https://ugur.ozyilmazel.com"
-https://ugur.ozyilmazel.com -> 200
+```bash
+statoo -verbose "https://ugur.ozyilmazel.com"
+# https://ugur.ozyilmazel.com -> 200
 ```
 
 or;
 
 ```bash
-$ statoo -json https://vigo.io
+statoo -json https://vigo.io
 ```
 
 response;
@@ -96,7 +100,10 @@ Let’s find text inside of the response body. This feature is only available
 if the `-json` flag is set!
 
 ```bash
-$ statoo -json -find "Meetup organization" https://vigo.io
+statoo -json -find "Meetup organization" https://vigo.io
+```
+
+```json
 {
     "url": "https://vigo.io",
     "status": 200,
@@ -106,8 +113,13 @@ $ statoo -json -find "Meetup organization" https://vigo.io
     "find": "Meetup organization",
     "found": true
 }
+```
 
-$ statoo -json -find "meetup organization" https://vigo.io # case sensitive
+```bash
+statoo -json -find "meetup organization" https://vigo.io # case sensitive
+```
+
+```json
 {
     "url": "https://vigo.io",
     "status": 200,
@@ -122,13 +134,13 @@ $ statoo -json -find "meetup organization" https://vigo.io # case sensitive
 You can add basic authentication via `-auth` flag
 
 ```bash
-$ statoo -auth "username:password" https://your.basic.auth.url
+statoo -auth "username:password" https://your.basic.auth.url
 ```
 
 Now you can pass multiple `-header` flags:
 
 ```bash
-$ statoo -header "Key1: Value1" -header "Key2: Value2" "https://ugur.ozyilmazel.com"
+statoo -header "Key1: Value1" -header "Key2: Value2" "https://ugur.ozyilmazel.com"
 ```
 
 It’s better to pipe `-json` output to `jq` or `python -m json.tool` for pretty print :)
@@ -138,7 +150,7 @@ That’s it!
 Bash completions is available via;
 
 ```bash
-$ eval "$(statoo bash-completion)"
+eval "$(statoo bash-completion)"
 ```
 
 ---
@@ -146,7 +158,10 @@ $ eval "$(statoo bash-completion)"
 ## Rake Tasks
 
 ```bash
-$ rake -T
+rake -T
+```
+
+```bash
 
 rake default               # show avaliable tasks (default task)
 rake docker:build          # Build
@@ -160,19 +175,33 @@ rake test:update_coverage  # update coverage value in README
 
 ---
 
-## Docker
+## Docker (local)
 
 build:
 
 ```bash
-$ docker build . -t statoo
+docker build . -t statoo
 ```
 
 run:
 
 ```bash
-$ docker run -i -t statoo:latest statoo -h
-$ docker run -i -t statoo:latest statoo -json -find "Meetup organization" https://vigo.io
+docker run -i -t statoo:latest statoo -h
+```
+
+```bash
+docker run -i -t statoo:latest statoo -json -find "Meetup organization" https://vigo.io
+```
+
+---
+
+## Docker (docker hub)
+
+https://hub.docker.com/repository/docker/vigo/statoo
+
+```bash
+# latest
+docker run -ti vigo/statoo statoo -h
 ```
 
 ---
