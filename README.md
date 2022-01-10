@@ -165,15 +165,15 @@ rake -T
 ```
 
 ```bash
-
-rake default               # show avaliable tasks (default task)
-rake docker:build          # Build
-rake docker:rmi            # Delete image
-rake docker:run            # Run
-rake release[revision]     # Release new version major,minor,patch, default: patch
-rake test:run[verbose]     # run tests, generate coverage
-rake test:show_coverage    # show coverage after running tests
-rake test:update_coverage  # update coverage value in README
+rake default                # show avaliable tasks (default task)
+rake docker:build           # Build (locally)
+rake docker:build_and_push  # Build and push to docker hub (latest)
+rake docker:rmi             # Delete image (locally)
+rake docker:run             # Run (locally)
+rake release[revision]      # Release new version major,minor,patch, default: patch
+rake test:run[verbose]      # run tests, generate coverage
+rake test:show_coverage     # show coverage after running tests
+rake test:update_coverage   # update coverage value in README
 ```
 
 ---
@@ -183,17 +183,17 @@ rake test:update_coverage  # update coverage value in README
 build:
 
 ```bash
-docker build . -t statoo
+docker build -t statoo:latest .
 ```
 
 run:
 
 ```bash
-docker run -i -t statoo:latest statoo -h
+docker run statoo:latest -h
 ```
 
 ```bash
-docker run -i -t statoo:latest statoo -json -find "Meetup organization" https://vigo.io
+docker run statoo:latest -json -find "Meetup organization" https://vigo.io
 ```
 
 ---
@@ -204,7 +204,8 @@ https://hub.docker.com/repository/docker/vigo/statoo
 
 ```bash
 # latest
-docker run -ti vigo/statoo statoo -h
+docker run vigo/statoo -h
+docker run vigo/statoo -json -find "Meetup organization" https://vigo.io
 ```
 
 ---
@@ -213,6 +214,7 @@ docker run -ti vigo/statoo statoo -h
 
 * [Uğur "vigo" Özyılmazel](https://github.com/vigo) - Creator, maintainer
 * [Erman İmer](https://github.com/ermanimer) - Contributor
+* [Rishi Kumar Ray](https://github.com/RishiKumarRay) - Contributor
 
 ---
 

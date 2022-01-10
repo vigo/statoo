@@ -111,19 +111,27 @@ end
 # docker
 # -----------------------------------------------------------------------------
 namespace :docker do
-  desc "Build"
+  desc "Build (locally)"
   task :build do
-    system "docker build . -t statoo"
+    system "docker build -t statoo:latest ."
+  end
+
+  desc "Build and push to docker hub (latest)"
+  task :build_and_push do
+    system %{
+      docker build -t vigo/statoo:latest . &&
+      docker push vigo/statoo:latest
+    }
   end
   
-  desc "Delete image"
+  desc "Delete image (locally)"
   task :rmi do
     system "docker rmi statoo:latest"
   end
   
-  desc "Run"
+  desc "Run (locally)"
   task :run do
-    system "docker run -i -t statoo:latest statoo -h"
+    system "docker run statoo:latest -h"
   end
 end
 # -----------------------------------------------------------------------------
