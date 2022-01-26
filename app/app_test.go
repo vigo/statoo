@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -38,31 +39,14 @@ func TestCustomHeadersFlag(t *testing.T) {
 	}
 }
 
-func TestCustomAuthFlag(t *testing.T) {
-	var flags flag.FlagSet
-	var a app.BasicAuthFlag
-
-	flags.Init("test", flag.ContinueOnError)
-	flags.Var(&a, "auth", "usage")
-	flags.Var(&a, "a", "usage")
-	if err := flags.Parse([]string{"-a=foobar"}); err == nil {
-		t.Error(err)
-	}
-	if err := flags.Parse([]string{"-auth=foo-bar"}); err == nil {
-		t.Error(err)
-	}
-	if err := flags.Parse([]string{"-auth=foo:bar"}); err != nil {
-		t.Error(err)
-	}
-}
-
 type gzipResponseWriter struct {
 	io.Writer
 	http.ResponseWriter
 }
 
 func (w gzipResponseWriter) Write(b []byte) (int, error) {
-	return w.Writer.Write(b)
+	n, err := w.Writer.Write(b)
+	return n, fmt.Errorf("gzip error: %w", err)
 }
 
 func gzipWrapper(handler http.Handler) http.Handler {
@@ -175,28 +159,35 @@ func TestResponse(t *testing.T) {
 		app.OptFind = nil
 	})
 
-	t.Run("test empty URL arg", func(t *testing.T) {
-		app.ArgURL = ""
-		cmd.Out = new(bytes.Buffer)
-		if got := cmd.Run(); got.Error() != "parse \"\": empty url" {
-			t.Errorf("got: %v", got)
-		}
-	})
-
 	t.Run("test URL w/o prefix", func(t *testing.T) {
 		app.ArgURL = "vigo.io"
 		cmd.Out = new(bytes.Buffer)
-		if got := cmd.Run(); got.Error() != "parse \"vigo.io\": invalid URI for request" {
-			t.Errorf("got: %v", got)
+
+		want := "url parse error: parse \"vigo.io\": invalid URI for request"
+		if got := cmd.Run(); got.Error() != want {
+			t.Errorf("want: %v, got: %v", want, got)
 		}
 	})
 
-	t.Run("set errorious timeout", func(t *testing.T) {
+	t.Run("set errorious timeout max", func(t *testing.T) {
 		*app.OptTimeout = 200
 		app.ArgURL = "https://vigo.io"
 		cmd.Out = new(bytes.Buffer)
-		if got := cmd.Run(); got.Error() != "invalid timeout value: 200" {
-			t.Errorf("want nil, got: %v", got)
+
+		want := "invalid timeout: 200"
+		if got := cmd.Run(); got.Error() != want {
+			t.Errorf("want: %v, got: %v", want, got)
+		}
+	})
+
+	t.Run("set errorious timeout min", func(t *testing.T) {
+		*app.OptTimeout = 0
+		app.ArgURL = "https://vigo.io"
+		cmd.Out = new(bytes.Buffer)
+
+		want := "invalid timeout: 0"
+		if got := cmd.Run(); got.Error() != want {
+			t.Errorf("want: %v, got: %v", want, got)
 		}
 	})
 
@@ -231,4 +222,22 @@ func TestResponse(t *testing.T) {
 		}
 		app.ArgURL = ""
 	})
+}
+
+func TestEmptyURLArg(t *testing.T) {
+	// https://talks.golang.org/2014/testing.slide#23
+	if os.Getenv("BE_CRASHER") == "1" {
+		cmnd := app.NewCLIApplication()
+		app.ArgURL = ""
+		cmnd.Out = new(bytes.Buffer)
+		_ = cmnd.Run()
+		return
+	}
+
+	cmd := exec.Command(os.Args[0], "-test.run=TestEmptyURLArg") //nolint
+	cmd.Env = append(os.Environ(), "BE_CRASHER=1")
+
+	if err := cmd.Run(); err != nil {
+		t.Errorf("want nil, got: %v", err)
+	}
 }

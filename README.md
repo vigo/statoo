@@ -4,7 +4,9 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/vigo/statoo)](https://goreportcard.com/report/github.com/vigo/statoo)
 [![Build Status](https://travis-ci.org/vigo/statoo.svg?branch=main)](https://travis-ci.org/vigo/statoo)
 ![Go Build Status](https://github.com/vigo/statoo/actions/workflows/go.yml/badge.svg)
-![Test Coverage](https://img.shields.io/badge/coverage-80.2%25-orange.svg)
+![GolangCI-Lint Status](https://github.com/vigo/statoo/actions/workflows/golang-lint.yml/badge.svg)
+![Docker Status](https://github.com/vigo/statoo/actions/workflows/docker.yml/badge.svg)
+![Test Coverage](https://img.shields.io/badge/coverage-79.5%25-orange.svg)
 ![Docker Pulls](https://img.shields.io/docker/pulls/vigo/statoo)
 ![Docker Size](https://img.shields.io/docker/image-size/vigo/statoo)
 
@@ -47,11 +49,12 @@ usage: ./statoo [-flags] URL
   -version        display version information (X.X.X)
   -verbose        verbose output              (default: false)
   -header         request header, multiple allowed
-  -t, -timeout    default timeout in seconds  (default: 10)
+  -t, -timeout    default timeout in seconds (default: 10, min: 1, max: 100)
   -h, -help       display help
   -j, -json       provides json output
   -f, -find       find text in response body if -json is set
   -a, -auth       basic auth "username:password"
+  -s, -skip       skip certificate check and hostname in that certificate (default: false)
 
   examples:
   
@@ -59,10 +62,9 @@ usage: ./statoo [-flags] URL
   $ ./statoo -timeout 30 "https://ugur.ozyilmazel.com"
   $ ./statoo -verbose "https://ugur.ozyilmazel.com"
   $ ./statoo -json https://vigo.io
-  $ ./statoo -json -find "python" https://vigo.io
+  $ ./statoo -json -find "Golang" https://vigo.io
   $ ./statoo -header "Authorization: Bearer TOKEN" https://vigo.io
   $ ./statoo -header "Authorization: Bearer TOKEN" -header "X-Api-Key: APIKEY" https://vigo.io
-  $ ./statoo -json -find "Meetup organization" https://vigo.io
   $ ./statoo -auth "user:secret" https://vigo.io
 ```
 
@@ -92,45 +94,47 @@ response;
     "status": 200,
     "checked_at": "2021-05-13T18:09:26.342012Z",
     "elapsed": 210.587871,
-    "length": 1453
+    "skipcc": false
 }
 ```
 
-- `elapsed` represents response is in milliseconds.
-- `length` represents response size in bytes (*gzipped*)
+`elapsed` represents response is in milliseconds.
 
-Let’s find text inside of the response body. This feature is only available
-if the `-json` flag is set!
+Let’s find text inside of the response body. This feature is only available if
+the `-json` flag is set! `length` represents response size in bytes
+(*gzipped*) when you search something in body!
 
 ```bash
-statoo -json -find "Meetup organization" https://vigo.io
+statoo -json -find "Golang" https://vigo.io
 ```
 
 ```json
 {
     "url": "https://vigo.io",
     "status": 200,
-    "checked_at": "2021-05-13T18:10:38.196705Z",
-    "elapsed": 183.128016,
-    "length": 1453,
-    "find": "Meetup organization",
-    "found": true
+    "checked_at": "2022-01-26T20:08:33.735768Z",
+    "elapsed": 242.93925,
+    "length": 7827,
+    "find": "Golang",
+    "found": true,
+    "skipcc": false
 }
 ```
 
 ```bash
-statoo -json -find "meetup organization" https://vigo.io # case sensitive
+statoo -json -find "golang" https://vigo.io # case sensitive
 ```
 
 ```json
 {
     "url": "https://vigo.io",
     "status": 200,
-    "checked_at": "2021-05-13T18:10:58.100932Z",
-    "elapsed": 189.403753,
-    "length": 1453,
-    "find": "meetup organization",
-    "found": false
+    "checked_at": "2022-01-26T20:14:03.487002Z",
+    "elapsed": 253.665083,
+    "length": 7827,
+    "find": "golang",
+    "found": false,
+    "skipcc": false
 }
 ```
 
@@ -168,6 +172,7 @@ rake -T
 rake default                # show avaliable tasks (default task)
 rake docker:build           # Build (locally)
 rake docker:build_and_push  # Build and push to docker hub (latest)
+rake docker:lint            # Lint
 rake docker:rmi             # Delete image (locally)
 rake docker:run             # Run (locally)
 rake release[revision]      # Release new version major,minor,patch, default: patch

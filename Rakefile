@@ -111,6 +111,11 @@ end
 # docker
 # -----------------------------------------------------------------------------
 namespace :docker do
+  desc "Lint"
+  task :lint do
+    system "hadolint Dockerfile"
+  end
+
   desc "Build (locally)"
   task :build do
     system "docker build -t statoo:latest ."

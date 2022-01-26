@@ -3,11 +3,8 @@ on:
   push:
     branches:
     - main
-    - development
+    - ST-*
   pull_request:
-    branches:
-    - main
-    - development
 
 jobs:
   build:

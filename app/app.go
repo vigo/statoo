@@ -13,6 +13,7 @@ package app
 
 import (
 	"compress/gzip"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
@@ -28,81 +29,67 @@ import (
 	"github.com/vigo/statoo/app/version"
 )
 
-const defTimeout = 10
+const (
+	defTimeout    = 10
+	defTimeoutMin = 1
+	defTimeoutMax = 100
+)
 
-var _ flag.Value = (*HeadersFlag)(nil)
-var _ flag.Value = (*BasicAuthFlag)(nil)
+var (
+	errEmptyHeader    = errors.New("header should not be empty")
+	errInvalidHeader  = errors.New("invalid header value")
+	errInvalidTimeout = errors.New("invalid timeout")
+)
 
-// HeadersFlag ...
+// HeadersFlag holds header information for http request.
 type HeadersFlag []string
 
 func (f *HeadersFlag) String() string {
 	return fmt.Sprintf("%s", *f)
 }
 
-// Set ...
+// Set appends valid header values to HeadersFlag.
 func (f *HeadersFlag) Set(value string) error {
 	value = strings.TrimSpace(value)
 	if value == "" {
-		return errors.New("header should not be empty")
+		return errEmptyHeader
 	}
 	if strings.Count(value, ":") != 1 {
-		return fmt.Errorf("invalind header data: %s", value)
+		return fmt.Errorf("%w: %s", errInvalidHeader, value)
 	}
 	if len(strings.FieldsFunc(value, func(c rune) bool { return c == ':' })) != 2 {
-		return fmt.Errorf("invalind header data: %s", value)
+		return fmt.Errorf("%w: %s", errInvalidHeader, value)
 	}
 	*f = append(*f, value)
 	return nil
 }
 
-// BasicAuthFlag ...
-type BasicAuthFlag string
-
-// Set ...
-func (f *BasicAuthFlag) Set(value string) error {
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return errors.New("auth flag should not be empty")
-	}
-	if strings.Count(value, ":") != 1 {
-		return fmt.Errorf("invalind auth data: %s", value)
-	}
-	if len(strings.FieldsFunc(value, func(c rune) bool { return c == ':' })) != 2 {
-		return fmt.Errorf("invalind auth data: %s", value)
-	}
-
-	*f = BasicAuthFlag(value)
-	return nil
-}
-
-func (f *BasicAuthFlag) String() string {
-	return string(*f)
-}
-
 var (
-	// ArgURL holds URL input from command-line
+	// ArgURL holds URL input from command-line.
 	ArgURL string
 
-	// OptVersionInformation holds boolean for displaying version information
+	// OptVersionInformation holds boolean for displaying version information.
 	OptVersionInformation *bool
 
-	// OptTimeout holds default timeout for network transport operations
+	// OptTimeout holds default timeout for network transport operations.
 	OptTimeout *int
 
-	// OptVerboseOutput holds boolean for displaying detailed output
+	// OptVerboseOutput holds boolean for displaying detailed output.
 	OptVerboseOutput *bool
 
-	// OptJSONOutput holds boolean for json response instead of text
+	// OptJSONOutput holds boolean for json response instead of text.
 	OptJSONOutput *bool
 
-	// OptHeaders holds custom request header key:value
+	// OptHeaders holds custom request header key:value.
 	OptHeaders HeadersFlag
-	// OptFind holds lookup string in the body of the response
+	// OptFind holds lookup string in the body of the response.
 	OptFind *string
 
-	// OptBasicAuth holds basic auth key:value credentials
-	OptBasicAuth BasicAuthFlag
+	// OptBasicAuth holds basic auth key:value credentials.
+	OptBasicAuth *string
+
+	// OptInsecureSkipVerify holds certificate check option.
+	OptInsecureSkipVerify *bool
 
 	usage = `
 usage: %[1]s [-flags] URL
@@ -110,13 +97,14 @@ usage: %[1]s [-flags] URL
   flags:
 
   -version        display version information (%s)
-  -verbose        verbose output              (default: false)
+  -verbose        verbose output (default: false)
   -header         request header, multiple allowed, "Key: Value"
-  -t, -timeout    default timeout in seconds  (default: %d)
+  -t, -timeout    default timeout in seconds (default: %d, min: %d, max: %d)
   -h, -help       display help
   -j, -json       provides json output
   -f, -find       find text in response body if -json is set
   -a, -auth       basic auth "username:password"
+  -s, -skip       skip certificate check and hostname in that certificate (default: false)
 
   examples:
   
@@ -127,7 +115,7 @@ usage: %[1]s [-flags] URL
   $ %[1]s -json -find "python" https://vigo.io
   $ %[1]s -header "Authorization: Bearer TOKEN" https://vigo.io
   $ %[1]s -header "Authorization: Bearer TOKEN" -header "X-Api-Key: APIKEY" https://vigo.io
-  $ %[1]s -json -find "Meetup organization" https://vigo.io
+  $ %[1]s -json -find "Golang" https://vigo.io
   $ %[1]s -auth "user:secret" https://vigo.io
 
 `
@@ -135,26 +123,27 @@ usage: %[1]s [-flags] URL
 {
     local cur next
     cur="${COMP_WORDS[COMP_CWORD]}"
-    opts="-a -auth -f -find -header -h -help -j -json -t -timeout -verbose -version"
+    opts="-a -auth -f -find -header -h -help -j -json -t -timeout -s -skip -verbose -version"
     COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
 }
 complete -F __statoo_comp statoo`
 )
 
-// CLIApplication represents app structure
+// CLIApplication represents app structure.
 type CLIApplication struct {
 	Out io.Writer
 }
 
-// JSONResponse represents data structure of json response
+// JSONResponse represents data structure of json response.
 type JSONResponse struct {
-	URL       string    `json:"url"`
-	Status    int       `json:"status"`
-	CheckedAt time.Time `json:"checked_at"`
-	Elapsed   float64   `json:"elapsed,omitempty"`
-	Length    int       `json:"length,omitempty"`
-	Find      *string   `json:"find,omitempty"`
-	Found     *bool     `json:"found,omitempty"`
+	URL                  string    `json:"url"`
+	Status               int       `json:"status"`
+	CheckedAt            time.Time `json:"checked_at"`
+	Elapsed              float64   `json:"elapsed,omitempty"`
+	Length               int       `json:"length,omitempty"`
+	Find                 *string   `json:"find,omitempty"`
+	Found                *bool     `json:"found,omitempty"`
+	SkipCertificateCheck *bool     `json:"skipcc,omitempty"`
 }
 
 func trimSpaces(s []string) {
@@ -163,12 +152,20 @@ func trimSpaces(s []string) {
 	}
 }
 
-// NewCLIApplication creates new CLIApplication instance
+// NewCLIApplication creates new CLIApplication instance.
 func NewCLIApplication() *CLIApplication {
 	flag.Usage = func() {
 		// w/o os.Stdout, you need to pipe out via
 		// cmd &> /path/to/file
-		fmt.Fprintf(os.Stdout, usage, os.Args[0], version.Version, defTimeout)
+		fmt.Fprintf(
+			os.Stdout,
+			usage,
+			os.Args[0],
+			version.Version,
+			defTimeout,
+			defTimeoutMin,
+			defTimeoutMax,
+		)
 		os.Exit(0)
 	}
 
@@ -190,8 +187,12 @@ func NewCLIApplication() *CLIApplication {
 	flag.Var(&OptHeaders, "header", "")
 
 	helpBasicAuth := "basic auth \"username:password\""
-	flag.Var(&OptBasicAuth, "auth", helpBasicAuth)
-	flag.Var(&OptBasicAuth, "a", helpBasicAuth+" (short)")
+	OptBasicAuth = flag.String("auth", "", helpBasicAuth)
+	flag.StringVar(OptBasicAuth, "a", "", helpBasicAuth+" (short)")
+
+	helpOptInsecureSkipVerify := "skip certificate check and hostname in that certificate"
+	OptInsecureSkipVerify = flag.Bool("skip", false, helpOptInsecureSkipVerify)
+	flag.BoolVar(OptInsecureSkipVerify, "s", false, helpOptInsecureSkipVerify+" (short)")
 
 	flag.Parse()
 
@@ -202,7 +203,7 @@ func NewCLIApplication() *CLIApplication {
 	}
 }
 
-// Run executes main application
+// Run executes main application.
 func (c *CLIApplication) Run() error {
 	if *OptVersionInformation {
 		fmt.Fprintln(c.Out, version.Version)
@@ -216,26 +217,30 @@ func (c *CLIApplication) Run() error {
 	return c.Validate()
 }
 
-// Validate runs validations for flags
+// Validate runs validations for flags.
 func (c *CLIApplication) Validate() error {
+	if len(ArgURL) == 0 {
+		flag.Usage()
+	}
+
 	_, err := url.ParseRequestURI(ArgURL)
 	if err != nil {
-		return fmt.Errorf(err.Error())
+		return fmt.Errorf("url parse error: %w", err)
 	}
 
 	if *OptTimeout > 100 || *OptTimeout < 1 {
-		return fmt.Errorf("invalid timeout value: %d", *OptTimeout)
+		return fmt.Errorf("%w: %d", errInvalidTimeout, *OptTimeout)
 	}
 	return c.GetResult()
 }
 
-// GetResult fetches the status information of given URL
+// GetResult fetches the status information of given URL.
 func (c *CLIApplication) GetResult() error {
 	tr := http.DefaultTransport.(*http.Transport).Clone()
 	tr.MaxIdleConns = 10
 	tr.IdleConnTimeout = 30 * time.Second
 	tr.DisableCompression = true
-	tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: *OptInsecureSkipVerify} //nolint
 
 	timeout := time.Duration(*OptTimeout) * time.Second
 	client := &http.Client{
@@ -243,9 +248,10 @@ func (c *CLIApplication) GetResult() error {
 		Timeout:   timeout,
 	}
 
-	req, err := http.NewRequest("GET", ArgURL, nil)
+	ctx := context.Background()
+	req, err := http.NewRequestWithContext(ctx, "GET", ArgURL, nil)
 	if err != nil {
-		return fmt.Errorf("error: %v", err)
+		return fmt.Errorf("request error: %w", err)
 	}
 
 	req.Header.Set("Accept-Encoding", "gzip")
@@ -258,35 +264,37 @@ func (c *CLIApplication) GetResult() error {
 		}
 	}
 
-	if OptBasicAuth.String() != "" {
-		words := strings.Split(OptBasicAuth.String(), ":")
-		trimSpaces(words) // remove spaces, foo      :  bar => foo:bar
+	if *OptBasicAuth != "" {
+		words := strings.Split(*OptBasicAuth, ":")
+		trimSpaces(words)
+		fmt.Println("words", words)
 		req.SetBasicAuth(words[0], words[1])
 	}
 
 	start := time.Now()
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("error: %v", err)
+		return fmt.Errorf("response error: %w", err)
 	}
 	elapsed := time.Since(start)
 
 	if resp.Body != nil {
 		defer func() {
-			if err := resp.Body.Close(); err != nil {
-				fmt.Fprintln(os.Stderr, err.Error())
+			if errClose := resp.Body.Close(); err != nil {
+				fmt.Fprintln(os.Stderr, errClose.Error())
 			}
 		}()
 	}
 
 	if *OptJSONOutput {
 		js := &JSONResponse{
-			URL:       ArgURL,
-			Status:    resp.StatusCode,
-			CheckedAt: time.Now().UTC(),
-			Elapsed:   float64(elapsed) / float64(time.Millisecond),
-			Find:      nil,
-			Found:     nil,
+			URL:                  ArgURL,
+			Status:               resp.StatusCode,
+			CheckedAt:            time.Now().UTC(),
+			Elapsed:              float64(elapsed) / float64(time.Millisecond),
+			Find:                 nil,
+			Found:                nil,
+			SkipCertificateCheck: OptInsecureSkipVerify,
 		}
 
 		if *OptFind != "" {
@@ -296,7 +304,7 @@ func (c *CLIApplication) GetResult() error {
 			case "gzip":
 				bodyReader, err = gzip.NewReader(resp.Body)
 				if err != nil {
-					return fmt.Errorf("body read (gzip) error: %v", err)
+					return fmt.Errorf("body read (gzip) error: %w", err)
 				}
 				defer func() {
 					if err := bodyReader.Close(); err != nil {
@@ -318,12 +326,12 @@ func (c *CLIApplication) GetResult() error {
 
 		j, err := json.Marshal(js)
 		if err != nil {
-			return fmt.Errorf("error: %v", err)
+			return fmt.Errorf("error: %w", err)
 		}
 
 		_, err = c.Out.Write(j)
 		if err != nil {
-			return fmt.Errorf("error: %v", err)
+			return fmt.Errorf("error: %w", err)
 		}
 		return nil
 	}
