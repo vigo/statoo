@@ -152,11 +152,8 @@ func trimSpaces(s []string) {
 	}
 }
 
-// NewCLIApplication creates new CLIApplication instance.
-func NewCLIApplication() *CLIApplication {
-	flag.Usage = func() {
-		// w/o os.Stdout, you need to pipe out via
-		// cmd &> /path/to/file
+func flagUsage(code int) func() {
+	return func() {
 		fmt.Fprintf(
 			os.Stdout,
 			usage,
@@ -166,8 +163,15 @@ func NewCLIApplication() *CLIApplication {
 			defTimeoutMin,
 			defTimeoutMax,
 		)
-		os.Exit(0)
+		if code > 0 {
+			os.Exit(code)
+		}
 	}
+}
+
+// NewCLIApplication creates new CLIApplication instance.
+func NewCLIApplication() *CLIApplication {
+	flag.Usage = flagUsage(0)
 
 	OptVersionInformation = flag.Bool("version", false, fmt.Sprintf("display version information (%s)", version.Version))
 	OptVerboseOutput = flag.Bool("verbose", false, "verbose output")
@@ -220,7 +224,8 @@ func (c *CLIApplication) Run() error {
 // Validate runs validations for flags.
 func (c *CLIApplication) Validate() error {
 	if len(ArgURL) == 0 {
-		flag.Usage()
+		flagUsage(-1)()
+		return nil
 	}
 
 	_, err := url.ParseRequestURI(ArgURL)
@@ -326,12 +331,12 @@ func (c *CLIApplication) GetResult() error {
 
 		j, err := json.Marshal(js)
 		if err != nil {
-			return fmt.Errorf("error: %w", err)
+			return fmt.Errorf("json marshal error: %w", err)
 		}
 
 		_, err = c.Out.Write(j)
 		if err != nil {
-			return fmt.Errorf("error: %w", err)
+			return fmt.Errorf("write error: %w", err)
 		}
 		return nil
 	}

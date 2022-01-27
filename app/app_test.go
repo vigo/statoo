@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"os/exec"
 	"strings"
 	"testing"
 
@@ -25,6 +24,10 @@ func TestCustomHeadersFlag(t *testing.T) {
 
 	flags.Init("test", flag.ContinueOnError)
 	flags.Var(&h, "header", "usage")
+
+	if err := flags.Parse([]string{"-header="}); err == nil {
+		t.Error(err)
+	}
 	if err := flags.Parse([]string{"-header=foobar"}); err == nil {
 		t.Error(err)
 	}
@@ -32,6 +35,12 @@ func TestCustomHeadersFlag(t *testing.T) {
 		t.Error(err)
 	}
 	if err := flags.Parse([]string{"-header=foo.bar", "-header=foobar"}); err == nil {
+		t.Error(err)
+	}
+	if err := flags.Parse([]string{"-header=foo;bar"}); err == nil {
+		t.Error(err)
+	}
+	if err := flags.Parse([]string{"-header=foo:bar:baz"}); err == nil {
 		t.Error(err)
 	}
 	if err := flags.Parse([]string{"-header=foo:bar"}); err != nil {
@@ -71,6 +80,14 @@ func TestResponse(t *testing.T) {
 	handlerWithGZ := gzipWrapper(handler)
 
 	cmd := app.NewCLIApplication()
+
+	t.Run("test empty URL arg", func(t *testing.T) {
+		app.ArgURL = ""
+		cmd.Out = new(bytes.Buffer)
+		if err := cmd.Run(); err != nil {
+			t.Errorf("want: nil, got: %v", err)
+		}
+	})
 
 	t.Run("test fake 200 response", func(t *testing.T) {
 		cmd.Out = new(bytes.Buffer)
@@ -222,22 +239,4 @@ func TestResponse(t *testing.T) {
 		}
 		app.ArgURL = ""
 	})
-}
-
-func TestEmptyURLArg(t *testing.T) {
-	// https://talks.golang.org/2014/testing.slide#23
-	if os.Getenv("BE_CRASHER") == "1" {
-		cmnd := app.NewCLIApplication()
-		app.ArgURL = ""
-		cmnd.Out = new(bytes.Buffer)
-		_ = cmnd.Run()
-		return
-	}
-
-	cmd := exec.Command(os.Args[0], "-test.run=TestEmptyURLArg") //nolint
-	cmd.Env = append(os.Environ(), "BE_CRASHER=1")
-
-	if err := cmd.Run(); err != nil {
-		t.Errorf("want nil, got: %v", err)
-	}
 }
