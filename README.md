@@ -205,7 +205,7 @@ docker run statoo:latest -json -find "Meetup organization" https://vigo.io
 
 ## Docker (docker hub)
 
-https://hub.docker.com/repository/docker/vigo/statoo
+https://hub.docker.com/r/vigo/statoo/
 
 ```bash
 # latest
