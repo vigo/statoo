@@ -94,16 +94,6 @@ desc "Release new version #{AVAILABLE_REVISIONS.join(',')}, default: patch"
 task :release, [:revision] => [:repo_clean] do |_, args|
   args.with_defaults(revision: 'patch')
   Rake::Task['bump'].invoke(args.revision)
-  
-  current_branch = "#{Rake::Task['get_current_branch'].invoke.first.call}"
-  current_git_tag = "v#{Rake::Task['current_version'].execute.first.call}"
-  
-  system %(
-    git push origin #{current_branch} &&
-    echo "-> push to #{current_branch}" &&
-    git push origin #{current_git_tag} &&
-    echo "-> push to #{current_git_tag}"
-  )
 end
 # -----------------------------------------------------------------------------
 
@@ -123,9 +113,16 @@ namespace :docker do
 
   desc "Build and push to docker hub (latest)"
   task :build_and_push do
+    current_git_tag = "v#{Rake::Task['current_version'].execute.first.call}"
+
     system %{
       docker build -t vigo/statoo:latest . &&
-      docker push vigo/statoo:latest
+      echo "-> vigo/statoo:latest" &&
+      docker build -t vigo/statoo:#{current_git_tag} . &&
+      echo "-> vigo/statoo:#{current_git_tag}" &&
+      docker push vigo/statoo:latest &&
+      docker push vigo/statoo:#{current_git_tag} &&
+      echo "-> pushed both..."
     }
   end
   
