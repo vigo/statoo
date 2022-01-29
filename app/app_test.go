@@ -77,6 +77,13 @@ func TestResponse(t *testing.T) {
 		_, _ = w.Write([]byte("hello world\n"))
 	})
 
+	handlerBasicAuth := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		username, password, ok := r.BasicAuth()
+		if ok {
+			_, _ = w.Write([]byte("basic auth, " + username + "," + password + "\n"))
+		}
+	})
+
 	handlerWithGZ := gzipWrapper(handler)
 
 	cmd := app.NewCLIApplication()
@@ -100,6 +107,32 @@ func TestResponse(t *testing.T) {
 		*app.OptJSONOutput = false
 	})
 
+	t.Run("basic auth", func(t *testing.T) {
+		buff := new(bytes.Buffer)
+		cmd.Out = buff
+
+		ts := httptest.NewServer(handlerBasicAuth)
+		app.ArgURL = ts.URL
+
+		*app.OptJSONOutput = true
+		*app.OptBasicAuth = "foo:bar"
+
+		if err := cmd.Run(); err != nil {
+			t.Error(err)
+		}
+
+		body, _ := ioutil.ReadAll(buff)
+		jr := new(app.JSONResponse)
+
+		_ = json.Unmarshal(body, jr)
+
+		if got := jr.Status; got != 200 {
+			t.Errorf("want 200, got: %v", got)
+		}
+
+		*app.OptJSONOutput = false
+	})
+
 	t.Run("json response", func(t *testing.T) {
 		buff := new(bytes.Buffer)
 		cmd.Out = buff
@@ -115,9 +148,11 @@ func TestResponse(t *testing.T) {
 		body, _ := ioutil.ReadAll(buff)
 		jr := new(app.JSONResponse)
 		_ = json.Unmarshal(body, jr)
+
 		if got := jr.Status; got != 200 {
 			t.Errorf("want 200, got: %v", got)
 		}
+
 		*app.OptJSONOutput = false
 	})
 
@@ -138,6 +173,7 @@ func TestResponse(t *testing.T) {
 
 		jr := new(app.JSONResponse)
 		_ = json.Unmarshal(body, jr)
+
 		if got := jr.Status; got != 200 {
 			t.Errorf("want 200, got: %v", got)
 		}
@@ -150,6 +186,7 @@ func TestResponse(t *testing.T) {
 		if got := *jr.Find; got != "hello" {
 			t.Errorf("want true, got: %v", got)
 		}
+
 		*app.OptJSONOutput = false
 		*app.OptFind = ""
 	})
@@ -195,6 +232,7 @@ func TestResponse(t *testing.T) {
 		if got := cmd.Run(); got.Error() != want {
 			t.Errorf("want: %v, got: %v", want, got)
 		}
+		*app.OptTimeout = 10
 	})
 
 	t.Run("set errorious timeout min", func(t *testing.T) {
@@ -206,6 +244,7 @@ func TestResponse(t *testing.T) {
 		if got := cmd.Run(); got.Error() != want {
 			t.Errorf("want: %v, got: %v", want, got)
 		}
+		*app.OptTimeout = 10
 	})
 
 	t.Run("get version", func(t *testing.T) {

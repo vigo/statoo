@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -340,6 +341,9 @@ func (c *CLIApplication) GetResult() error {
 		}
 		return nil
 	}
+
+	_, _ = io.Copy(ioutil.Discard, resp.Body)
+
 	if *OptVerboseOutput {
 		fmt.Fprintf(c.Out, "%s -> ", ArgURL)
 	}
