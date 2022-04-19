@@ -28,16 +28,19 @@ jobs:
       run: go test -count=1 -coverprofile=coverage.out ./...
 
     - name: Build app
-      run: go build -v .
+      id: build_go_app
+      run: |
+        go build -v .
+        echo ::set-output name=exit_code::$?
 
-    - name: Slack Notify Success
-      if: success()
-      uses: cemkiy/action-slacker@master
-      env:
-        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+    - name: Notify Slack on success
+      if: steps.build_go_app.outputs.exit_code == 0
+      id: slack_notification
+      uses: ravsamhq/notify-slack-action@v1
       with:
-        channel: '#github'
-        username: 'github'
-        icon_url: 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png'
-        color: '#00FFAA'
-        title: ${{ github.repository }} -> ${{ github.sha }}
+        status: ${{ job.status }}
+        notification_title: 'Build succeeded'
+        message_format: 'Statoo build succeeded. <{repo_url}|{repo}@{branch}> on <{commit_url}|{commit_sha}>'
+        footer: 'repo: <{repo_url}|{repo}>'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
