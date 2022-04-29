@@ -59,13 +59,13 @@ end
 # -----------------------------------------------------------------------------
 
 
-# run tests
+# run tasks
 # -----------------------------------------------------------------------------
 namespace :test do
   desc 'run tests, generate coverage'
   task :run, [:verbose] do |_, args|
     args.with_defaults(verbose: '')
-    system "go test -count=1 #{args.verbose} -coverprofile=coverage.out ./..."
+    system "go test -failfast -count=1 #{args.verbose} -coverprofile=coverage.out ./..."
   end
   
   desc "show coverage after running tests"
@@ -90,7 +90,7 @@ end
 
 # release new version
 # -----------------------------------------------------------------------------
-desc "Release new version #{AVAILABLE_REVISIONS.join(',')}, default: patch"
+desc "release new version #{AVAILABLE_REVISIONS.join(',')}, default: patch"
 task :release, [:revision] => [:repo_clean] do |_, args|
   args.with_defaults(revision: 'patch')
   Rake::Task['bump'].invoke(args.revision)
@@ -101,39 +101,9 @@ end
 # docker
 # -----------------------------------------------------------------------------
 namespace :docker do
-  desc "Lint"
+  desc "lint Dockerfile"
   task :lint do
     system "hadolint Dockerfile"
-  end
-
-  desc "Build (locally)"
-  task :build do
-    system "docker build -t statoo:latest ."
-  end
-
-  desc "Build and push to docker hub (latest)"
-  task :build_and_push do
-    current_git_tag = "v#{Rake::Task['current_version'].execute.first.call}"
-
-    system %{
-      docker build -t vigo/statoo:latest . &&
-      echo "-> vigo/statoo:latest" &&
-      docker build -t vigo/statoo:#{current_git_tag} . &&
-      echo "-> vigo/statoo:#{current_git_tag}" &&
-      docker push vigo/statoo:latest &&
-      docker push vigo/statoo:#{current_git_tag} &&
-      echo "-> pushed both..."
-    }
-  end
-  
-  desc "Delete image (locally)"
-  task :rmi do
-    system "docker rmi statoo:latest"
-  end
-  
-  desc "Run (locally)"
-  task :run do
-    system "docker run statoo:latest -h"
   end
 end
 # -----------------------------------------------------------------------------

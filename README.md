@@ -5,11 +5,11 @@
 [![Build Status](https://travis-ci.org/vigo/statoo.svg?branch=main)](https://travis-ci.org/vigo/statoo)
 ![Go Build Status](https://github.com/vigo/statoo/actions/workflows/go.yml/badge.svg)
 ![GolangCI-Lint Status](https://github.com/vigo/statoo/actions/workflows/golang-lint.yml/badge.svg)
-![Docker Status](https://github.com/vigo/statoo/actions/workflows/docker.yml/badge.svg)
+![Docker Lint Status](https://github.com/vigo/statoo/actions/workflows/docker.yml/badge.svg)
 ![Test Coverage](https://img.shields.io/badge/coverage-87.9%25-orange.svg)
 ![Docker Pulls](https://img.shields.io/docker/pulls/vigo/statoo)
 ![Docker Size](https://img.shields.io/docker/image-size/vigo/statoo)
-
+![Docker Build Status](https://github.com/vigo/statoo/actions/workflows/dockerhub.yml/badge.svg)
 
 # Statoo
 
@@ -46,15 +46,16 @@ usage: ./statoo [-flags] URL
 
   flags:
 
-  -version        display version information (X.X.X)
-  -verbose        verbose output              (default: false)
-  -header         request header, multiple allowed
-  -t, -timeout    default timeout in seconds (default: 10, min: 1, max: 100)
-  -h, -help       display help
-  -j, -json       provides json output
-  -f, -find       find text in response body if -json is set
-  -a, -auth       basic auth "username:password"
-  -s, -skip       skip certificate check and hostname in that certificate (default: false)
+  -version           display version information (%s)
+  -verbose           verbose output (default: false)
+  -request-header    request header, multiple allowed, "Key: Value", case sensitive
+  -response-header   response header for lookup -json is set, multiple allowed, "Key: Value"
+  -t, -timeout       default timeout in seconds (default: %d, min: %d, max: %d)
+  -h, -help          display help
+  -j, -json          provides json output
+  -f, -find          find text in response body if -json is set, case sensitive
+  -a, -auth          basic auth "username:password"
+  -s, -skip          skip certificate check and hostname in that certificate (default: false)
 
   examples:
   
@@ -62,10 +63,14 @@ usage: ./statoo [-flags] URL
   $ ./statoo -timeout 30 "https://ugur.ozyilmazel.com"
   $ ./statoo -verbose "https://ugur.ozyilmazel.com"
   $ ./statoo -json https://vigo.io
+  $ ./statoo -json -find "python" https://vigo.io
+  $ ./statoo -json -find "Python" https://vigo.io
   $ ./statoo -json -find "Golang" https://vigo.io
-  $ ./statoo -header "Authorization: Bearer TOKEN" https://vigo.io
-  $ ./statoo -header "Authorization: Bearer TOKEN" -header "X-Api-Key: APIKEY" https://vigo.io
+  $ ./statoo -request-header "Authorization: Bearer TOKEN" https://vigo.io
+  $ ./statoo -request-header "Authorization: Bearer TOKEN" -header "X-Api-Key: APIKEY" https://vigo.io
   $ ./statoo -auth "user:secret" https://vigo.io
+  $ ./statoo -json -response-header "Server: GitHub.com" https://vigo.io
+  $ ./statoo -json -response-header "Server: GitHub.com" -response-header "Foo: bar" https://vigo.io
 ```
 
 Let’s try:
@@ -144,13 +149,42 @@ You can add basic authentication via `-auth` flag
 statoo -auth "username:password" https://your.basic.auth.url
 ```
 
-Now you can pass multiple `-header` flags:
+Now you can pass multiple `-request-header` flags:
 
 ```bash
-statoo -header "Key1: Value1" -header "Key2: Value2" "https://ugur.ozyilmazel.com"
+statoo -request-header "Key1: Value1" -request-header "Key2: Value2" "https://ugur.ozyilmazel.com"
 ```
 
-It’s better to pipe `-json` output to `jq` or `python -m json.tool` for pretty print :)
+**New**
+
+You can query/search for response headers. You can pass multiple values, all
+**case sensitive**!. Let’s lookup for `Server` and `Foo` response header values.
+`Server` value should be `GitHub.com` and `Foo` value should be `bar`:
+
+```bash
+statoo -json -response-header "Server: GitHub.com" -response-header "Foo: bar" https://vigo.io
+```
+
+Response:
+
+```json
+{
+    "url": "https://vigo.io",
+    "status": 200,
+    "checked_at": "2022-07-09T17:51:14.792987Z",
+    "elapsed": 305.502833,
+    "skipcc": false,
+    "response_headers": {
+        "Foo=bar": false,
+        "Server=GitHub.com": true
+    }
+}
+```
+
+`Server` response header matches exactly!
+
+It’s better to pipe `-json` output to `jq` or `python -m json.tool` for pretty
+print :)
 
 That’s it!
 
@@ -165,45 +199,19 @@ eval "$(statoo bash-completion)"
 ## Rake Tasks
 
 ```bash
-rake -T
-```
+$ rake -T
 
-```bash
-rake default                # show avaliable tasks (default task)
-rake docker:build           # Build (locally)
-rake docker:build_and_push  # Build and push to docker hub (latest)
-rake docker:lint            # Lint
-rake docker:rmi             # Delete image (locally)
-rake docker:run             # Run (locally)
-rake release[revision]      # Release new version major,minor,patch, default: patch
-rake test:run[verbose]      # run tests, generate coverage
-rake test:show_coverage     # show coverage after running tests
-rake test:update_coverage   # update coverage value in README
+rake default               # show avaliable tasks (default task)
+rake docker:lint           # lint Dockerfile
+rake release[revision]     # release new version major,minor,patch, default: patch
+rake test:run[verbose]     # run tests, generate coverage
+rake test:show_coverage    # show coverage after running tests
+rake test:update_coverage  # update coverage value in README
 ```
 
 ---
 
-## Docker (local)
-
-build:
-
-```bash
-docker build -t statoo:latest .
-```
-
-run:
-
-```bash
-docker run statoo:latest -h
-```
-
-```bash
-docker run statoo:latest -json -find "Meetup organization" https://vigo.io
-```
-
----
-
-## Docker (docker hub)
+## Docker
 
 https://hub.docker.com/r/vigo/statoo/
 
