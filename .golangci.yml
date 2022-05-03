@@ -1,6 +1,7 @@
 run:
   concurrency: 4
   timeout: 1m
+  go: '1.16'
 
 linters-settings:
   revive:
