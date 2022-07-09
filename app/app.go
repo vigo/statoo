@@ -5,7 +5,7 @@ Usage
 
 	cmd := NewCLIApplication()
 	if err := cmd.Run(); err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 */
@@ -20,13 +20,13 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/vigo/statoo/app/flags"
 	"github.com/vigo/statoo/app/version"
 )
 
@@ -36,98 +36,20 @@ const (
 	defTimeoutMax = 100
 )
 
+var errInvalidTimeout = errors.New("invalid timeout value")
+
+// variable declarations.
 var (
-	errEmptyHeader    = errors.New("header should not be empty")
-	errInvalidHeader  = errors.New("invalid header value")
-	errInvalidTimeout = errors.New("invalid timeout")
-)
-
-// HeadersFlag holds header information for http request.
-type HeadersFlag []string
-
-func (f *HeadersFlag) String() string {
-	return fmt.Sprintf("%s", *f)
-}
-
-// Set appends valid header values to HeadersFlag.
-func (f *HeadersFlag) Set(value string) error {
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return errEmptyHeader
-	}
-	if strings.Count(value, ":") != 1 {
-		return fmt.Errorf("%w: %s", errInvalidHeader, value)
-	}
-	if len(strings.FieldsFunc(value, func(c rune) bool { return c == ':' })) != 2 {
-		return fmt.Errorf("%w: %s", errInvalidHeader, value)
-	}
-	*f = append(*f, value)
-	return nil
-}
-
-var (
-	// ArgURL holds URL input from command-line.
-	ArgURL string
-
-	// OptVersionInformation holds boolean for displaying version information.
+	ArgURL                string
 	OptVersionInformation *bool
-
-	// OptTimeout holds default timeout for network transport operations.
-	OptTimeout *int
-
-	// OptVerboseOutput holds boolean for displaying detailed output.
-	OptVerboseOutput *bool
-
-	// OptJSONOutput holds boolean for json response instead of text.
-	OptJSONOutput *bool
-
-	// OptHeaders holds custom request header key:value.
-	OptHeaders HeadersFlag
-	// OptFind holds lookup string in the body of the response.
-	OptFind *string
-
-	// OptBasicAuth holds basic auth key:value credentials.
-	OptBasicAuth *string
-
-	// OptInsecureSkipVerify holds certificate check option.
+	OptTimeout            *int
+	OptVerboseOutput      *bool
+	OptJSONOutput         *bool
+	OptRequestHeaders     flags.RequestHeadersFlag
+	OptResponseHeaders    flags.ResponseHeadersFlag
+	OptFind               *string
+	OptBasicAuth          *string
 	OptInsecureSkipVerify *bool
-
-	usage = `
-usage: %[1]s [-flags] URL
-
-  flags:
-
-  -version        display version information (%s)
-  -verbose        verbose output (default: false)
-  -header         request header, multiple allowed, "Key: Value"
-  -t, -timeout    default timeout in seconds (default: %d, min: %d, max: %d)
-  -h, -help       display help
-  -j, -json       provides json output
-  -f, -find       find text in response body if -json is set
-  -a, -auth       basic auth "username:password"
-  -s, -skip       skip certificate check and hostname in that certificate (default: false)
-
-  examples:
-  
-  $ %[1]s "https://ugur.ozyilmazel.com"
-  $ %[1]s -timeout 30 "https://ugur.ozyilmazel.com"
-  $ %[1]s -verbose "https://ugur.ozyilmazel.com"
-  $ %[1]s -json https://vigo.io
-  $ %[1]s -json -find "python" https://vigo.io
-  $ %[1]s -header "Authorization: Bearer TOKEN" https://vigo.io
-  $ %[1]s -header "Authorization: Bearer TOKEN" -header "X-Api-Key: APIKEY" https://vigo.io
-  $ %[1]s -json -find "Golang" https://vigo.io
-  $ %[1]s -auth "user:secret" https://vigo.io
-
-`
-	bashCompletion = `__statoo_comp()
-{
-    local cur next
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    opts="-a -auth -f -find -header -h -help -j -json -t -timeout -s -skip -verbose -version"
-    COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-}
-complete -F __statoo_comp statoo`
 )
 
 // CLIApplication represents app structure.
@@ -137,14 +59,15 @@ type CLIApplication struct {
 
 // JSONResponse represents data structure of json response.
 type JSONResponse struct {
-	URL                  string    `json:"url"`
-	Status               int       `json:"status"`
-	CheckedAt            time.Time `json:"checked_at"`
-	Elapsed              float64   `json:"elapsed,omitempty"`
-	Length               int       `json:"length,omitempty"`
-	Find                 *string   `json:"find,omitempty"`
-	Found                *bool     `json:"found,omitempty"`
-	SkipCertificateCheck *bool     `json:"skipcc,omitempty"`
+	URL                  string           `json:"url"`
+	Status               int              `json:"status"`
+	CheckedAt            time.Time        `json:"checked_at"`
+	Elapsed              float64          `json:"elapsed,omitempty"`
+	Length               int              `json:"length,omitempty"`
+	Find                 *string          `json:"find,omitempty"`
+	Found                *bool            `json:"found,omitempty"`
+	SkipCertificateCheck *bool            `json:"skipcc,omitempty"`
+	ResponseHeaders      *map[string]bool `json:"response_headers,omitempty"`
 }
 
 func trimSpaces(s []string) {
@@ -155,6 +78,7 @@ func trimSpaces(s []string) {
 
 func flagUsage(code int) func() {
 	return func() {
+		// flag.PrintDefaults()
 		fmt.Fprintf(
 			os.Stdout,
 			usage,
@@ -174,7 +98,11 @@ func flagUsage(code int) func() {
 func NewCLIApplication() *CLIApplication {
 	flag.Usage = flagUsage(0)
 
-	OptVersionInformation = flag.Bool("version", false, fmt.Sprintf("display version information (%s)", version.Version))
+	OptVersionInformation = flag.Bool(
+		"version",
+		false,
+		fmt.Sprintf("display version information (%s)", version.Version),
+	)
 	OptVerboseOutput = flag.Bool("verbose", false, "verbose output")
 
 	helpJSON := "provides json output"
@@ -189,7 +117,11 @@ func NewCLIApplication() *CLIApplication {
 	OptFind = flag.String("find", "", helpFind)
 	flag.StringVar(OptFind, "f", "", helpFind+" (short)")
 
-	flag.Var(&OptHeaders, "header", "")
+	helpRequestHeaders := "add http headers to your request. can be multiple"
+	flag.Var(&OptRequestHeaders, "request-header", helpRequestHeaders)
+
+	helpResponseHeaders := "query response headers, \"Server:GitHub.com\". can be multiple"
+	flag.Var(&OptResponseHeaders, "response-header", helpResponseHeaders)
 
 	helpBasicAuth := "basic auth \"username:password\""
 	OptBasicAuth = flag.String("auth", "", helpBasicAuth)
@@ -255,15 +187,15 @@ func (c *CLIApplication) GetResult() error {
 	}
 
 	ctx := context.Background()
-	req, err := http.NewRequestWithContext(ctx, "GET", ArgURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, ArgURL, nil)
 	if err != nil {
 		return fmt.Errorf("request error: %w", err)
 	}
 
 	req.Header.Set("Accept-Encoding", "gzip")
 
-	if len(OptHeaders) > 0 {
-		for _, headerValue := range OptHeaders {
+	if len(OptRequestHeaders) > 0 {
+		for _, headerValue := range OptRequestHeaders {
 			vals := strings.Split(headerValue, ":")
 			trimSpaces(vals)
 			req.Header.Set(vals[0], vals[1])
@@ -273,7 +205,6 @@ func (c *CLIApplication) GetResult() error {
 	if *OptBasicAuth != "" {
 		words := strings.Split(*OptBasicAuth, ":")
 		trimSpaces(words)
-		fmt.Println("words", words)
 		req.SetBasicAuth(words[0], words[1])
 	}
 
@@ -284,13 +215,12 @@ func (c *CLIApplication) GetResult() error {
 	}
 	elapsed := time.Since(start)
 
-	if resp.Body != nil {
-		defer func() {
-			if errClose := resp.Body.Close(); err != nil {
-				fmt.Fprintln(os.Stderr, errClose.Error())
-			}
-		}()
-	}
+	// The http Client and Transport guarantee that Body is always
+	// non-nil, even on responses without a body or responses with
+	// a zero-length body.
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if *OptJSONOutput {
 		js := &JSONResponse{
@@ -301,6 +231,26 @@ func (c *CLIApplication) GetResult() error {
 			Find:                 nil,
 			Found:                nil,
 			SkipCertificateCheck: OptInsecureSkipVerify,
+		}
+
+		if len(OptResponseHeaders) > 0 {
+			foundResponseHeaders := make(map[string]bool)
+			for _, headerValue := range OptResponseHeaders {
+				vals := strings.Split(headerValue, ":")
+				trimSpaces(vals)
+				mapKey := vals[0] + "=" + vals[1]
+
+				hvals, ok := resp.Header[vals[0]]
+				if ok {
+					hval := hvals[0]
+					if hval == vals[1] {
+						foundResponseHeaders[mapKey] = true
+					}
+				} else {
+					foundResponseHeaders[mapKey] = false
+				}
+			}
+			js.ResponseHeaders = &foundResponseHeaders
 		}
 
 		if *OptFind != "" {
@@ -314,7 +264,7 @@ func (c *CLIApplication) GetResult() error {
 				}
 				defer func() {
 					if err := bodyReader.Close(); err != nil {
-						fmt.Fprintln(os.Stderr, err.Error())
+						fmt.Fprintln(os.Stderr, "gzip body reader close error: %w", err)
 					}
 				}()
 			default:
@@ -341,8 +291,6 @@ func (c *CLIApplication) GetResult() error {
 		}
 		return nil
 	}
-
-	_, _ = io.Copy(ioutil.Discard, resp.Body)
 
 	if *OptVerboseOutput {
 		fmt.Fprintf(c.Out, "%s -> ", ArgURL)

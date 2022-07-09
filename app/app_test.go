@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -17,36 +16,6 @@ import (
 	"github.com/vigo/statoo/app"
 	"github.com/vigo/statoo/app/version"
 )
-
-func TestCustomHeadersFlag(t *testing.T) {
-	var flags flag.FlagSet
-	var h app.HeadersFlag
-
-	flags.Init("test", flag.ContinueOnError)
-	flags.Var(&h, "header", "usage")
-
-	if err := flags.Parse([]string{"-header="}); err == nil {
-		t.Error(err)
-	}
-	if err := flags.Parse([]string{"-header=foobar"}); err == nil {
-		t.Error(err)
-	}
-	if err := flags.Parse([]string{"-header=foo.bar"}); err == nil {
-		t.Error(err)
-	}
-	if err := flags.Parse([]string{"-header=foo.bar", "-header=foobar"}); err == nil {
-		t.Error(err)
-	}
-	if err := flags.Parse([]string{"-header=foo;bar"}); err == nil {
-		t.Error(err)
-	}
-	if err := flags.Parse([]string{"-header=foo:bar:baz"}); err == nil {
-		t.Error(err)
-	}
-	if err := flags.Parse([]string{"-header=foo:bar"}); err != nil {
-		t.Error(err)
-	}
-}
 
 type gzipResponseWriter struct {
 	io.Writer
@@ -228,7 +197,7 @@ func TestResponse(t *testing.T) {
 		app.ArgURL = "https://vigo.io"
 		cmd.Out = new(bytes.Buffer)
 
-		want := "invalid timeout: 200"
+		want := "invalid timeout value: 200"
 		if got := cmd.Run(); got.Error() != want {
 			t.Errorf("want: %v, got: %v", want, got)
 		}
@@ -240,7 +209,7 @@ func TestResponse(t *testing.T) {
 		app.ArgURL = "https://vigo.io"
 		cmd.Out = new(bytes.Buffer)
 
-		want := "invalid timeout: 0"
+		want := "invalid timeout value: 0"
 		if got := cmd.Run(); got.Error() != want {
 			t.Errorf("want: %v, got: %v", want, got)
 		}
