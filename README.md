@@ -6,7 +6,7 @@
 ![Go Build Status](https://github.com/vigo/statoo/actions/workflows/go.yml/badge.svg)
 ![GolangCI-Lint Status](https://github.com/vigo/statoo/actions/workflows/golang-lint.yml/badge.svg)
 ![Docker Lint Status](https://github.com/vigo/statoo/actions/workflows/docker-lint.yml/badge.svg)
-![Test Coverage](https://img.shields.io/badge/coverage-87.9%25-orange.svg)
+![Test Coverage](https://img.shields.io/badge/coverage-90.9%25-orange.svg)
 ![Docker Pulls](https://img.shields.io/docker/pulls/vigo/statoo)
 ![Docker Size](https://img.shields.io/docker/image-size/vigo/statoo)
 ![Docker Build Status](https://github.com/vigo/statoo/actions/workflows/dockerhub.yml/badge.svg)

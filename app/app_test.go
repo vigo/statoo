@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/vigo/statoo/app"
+	"github.com/vigo/statoo/app/flags"
 	"github.com/vigo/statoo/app/version"
 )
 
@@ -43,6 +44,8 @@ func gzipWrapper(handler http.Handler) http.Handler {
 
 func TestResponse(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("Server", "FakeServer")
 		_, _ = w.Write([]byte("hello world\n"))
 	})
 
@@ -123,6 +126,50 @@ func TestResponse(t *testing.T) {
 		}
 
 		*app.OptJSONOutput = false
+	})
+
+	t.Run("find headers", func(t *testing.T) {
+		buff := new(bytes.Buffer)
+		cmd.Out = buff
+
+		ts := httptest.NewServer(handler)
+		app.ArgURL = ts.URL
+		*app.OptJSONOutput = true
+		responseHeaders := flags.ResponseHeadersFlag{
+			"Content-Type: text/plain; charset=utf-8",
+			"Server: FakeServer",
+		}
+		app.OptResponseHeaders = responseHeaders
+
+		if err := cmd.Run(); err != nil {
+			t.Error(err)
+		}
+
+		body, _ := ioutil.ReadAll(buff)
+
+		jr := new(app.JSONResponse)
+		_ = json.Unmarshal(body, jr)
+
+		if jr.ResponseHeaders == nil {
+			t.Error("must have response headers")
+		}
+		rh := *jr.ResponseHeaders
+		val, ok := rh["Content-Type=text/plain; charset=utf-8"]
+		if !ok {
+			t.Error("Content-Type=text/plain; charset=utf-8 not found")
+		}
+
+		if !val {
+			t.Error("value must be true")
+		}
+
+		val, ok = rh["Server=FakeServer"]
+		if !ok {
+			t.Error("Server not found")
+		}
+		if !val {
+			t.Error("value must be true")
+		}
 	})
 
 	t.Run("find text", func(t *testing.T) {
