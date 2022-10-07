@@ -36,7 +36,7 @@ func (f *RequestHeadersFlag) Set(value string) error {
 	return nil
 }
 
-// ResponseHeadersFlag ...
+// ResponseHeadersFlag represents http response headers.
 type ResponseHeadersFlag []string
 
 func (f *ResponseHeadersFlag) String() string {

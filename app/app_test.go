@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -93,7 +92,7 @@ func TestResponse(t *testing.T) {
 			t.Error(err)
 		}
 
-		body, _ := ioutil.ReadAll(buff)
+		body, _ := io.ReadAll(buff)
 		jr := new(app.JSONResponse)
 
 		_ = json.Unmarshal(body, jr)
@@ -117,7 +116,7 @@ func TestResponse(t *testing.T) {
 			t.Error(err)
 		}
 
-		body, _ := ioutil.ReadAll(buff)
+		body, _ := io.ReadAll(buff)
 		jr := new(app.JSONResponse)
 		_ = json.Unmarshal(body, jr)
 
@@ -145,7 +144,7 @@ func TestResponse(t *testing.T) {
 			t.Error(err)
 		}
 
-		body, _ := ioutil.ReadAll(buff)
+		body, _ := io.ReadAll(buff)
 
 		jr := new(app.JSONResponse)
 		_ = json.Unmarshal(body, jr)
@@ -185,7 +184,7 @@ func TestResponse(t *testing.T) {
 			t.Error(err)
 		}
 
-		body, _ := ioutil.ReadAll(buff)
+		body, _ := io.ReadAll(buff)
 
 		jr := new(app.JSONResponse)
 		_ = json.Unmarshal(body, jr)
@@ -221,7 +220,7 @@ func TestResponse(t *testing.T) {
 			t.Error(err)
 		}
 
-		body, _ := ioutil.ReadAll(buff)
+		body, _ := io.ReadAll(buff)
 		jr := new(app.JSONResponse)
 		_ = json.Unmarshal(body, jr)
 
