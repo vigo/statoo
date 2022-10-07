@@ -27,6 +27,9 @@ jobs:
     - name: Run tests
       run: go test -count=1 -coverprofile=coverage.out ./...
 
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+
     - name: Build app
       id: build_go_app
       run: |
