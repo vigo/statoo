@@ -56,6 +56,7 @@ usage: ./statoo [-flags] URL
   -f, -find          find text in response body if -json is set, case sensitive
   -a, -auth          basic auth "username:password"
   -s, -skip          skip certificate check and hostname in that certificate (default: false)
+  -commithash        displays current build/commit hash (%s)
 
   examples:
   
@@ -155,8 +156,6 @@ Now you can pass multiple `-request-header` flags:
 statoo -request-header "Key1: Value1" -request-header "Key2: Value2" "https://ugur.ozyilmazel.com"
 ```
 
-**New**
-
 You can query/search for response headers. You can pass multiple values, all
 **case sensitive**!. Let’s lookup for `Server` and `Foo` response header values.
 `Server` value should be `GitHub.com` and `Foo` value should be `bar`:
@@ -192,6 +191,14 @@ Bash completions is available via;
 
 ```bash
 eval "$(statoo bash-completion)"
+```
+
+**New**
+
+You can check current build/commit hash via;
+
+```bash
+statoo -commithash
 ```
 
 ---

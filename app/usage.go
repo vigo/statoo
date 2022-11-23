@@ -15,6 +15,7 @@ usage: %[1]s [-flags] URL
   -f, -find          find text in response body if -json is set, case sensitive
   -a, -auth          basic auth "username:password"
   -s, -skip          skip certificate check and hostname in that certificate (default: false)
+  -commithash        displays current build/commit hash (%s)
 
   examples:
   

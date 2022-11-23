@@ -40,16 +40,17 @@ var errInvalidTimeout = errors.New("invalid timeout value")
 
 // variable declarations.
 var (
-	ArgURL                string
-	OptVersionInformation *bool
-	OptTimeout            *int
-	OptVerboseOutput      *bool
-	OptJSONOutput         *bool
-	OptRequestHeaders     flags.RequestHeadersFlag
-	OptResponseHeaders    flags.ResponseHeadersFlag
-	OptFind               *string
-	OptBasicAuth          *string
-	OptInsecureSkipVerify *bool
+	ArgURL                   string
+	OptVersionInformation    *bool
+	OptCommitHashInformation *bool
+	OptTimeout               *int
+	OptVerboseOutput         *bool
+	OptJSONOutput            *bool
+	OptRequestHeaders        flags.RequestHeadersFlag
+	OptResponseHeaders       flags.ResponseHeadersFlag
+	OptFind                  *string
+	OptBasicAuth             *string
+	OptInsecureSkipVerify    *bool
 )
 
 // CLIApplication represents app structure.
@@ -87,6 +88,7 @@ func flagUsage(code int) func() {
 			defTimeout,
 			defTimeoutMin,
 			defTimeoutMax,
+			version.CommitHash,
 		)
 		if code > 0 {
 			os.Exit(code)
@@ -103,6 +105,13 @@ func NewCLIApplication() *CLIApplication {
 		false,
 		fmt.Sprintf("display version information (%s)", version.Version),
 	)
+
+	OptCommitHashInformation = flag.Bool(
+		"commithash",
+		false,
+		fmt.Sprintf("display build information (%s)", version.CommitHash),
+	)
+
 	OptVerboseOutput = flag.Bool("verbose", false, "verbose output")
 
 	helpJSON := "provides json output"
@@ -144,6 +153,11 @@ func NewCLIApplication() *CLIApplication {
 func (c *CLIApplication) Run() error {
 	if *OptVersionInformation {
 		fmt.Fprintln(c.Out, version.Version)
+		return nil
+	}
+
+	if *OptCommitHashInformation {
+		fmt.Fprintln(c.Out, version.CommitHash)
 		return nil
 	}
 
