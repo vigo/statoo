@@ -79,7 +79,6 @@ func trimSpaces(s []string) {
 
 func flagUsage(code int) func() {
 	return func() {
-		// flag.PrintDefaults()
 		fmt.Fprintf(
 			os.Stdout,
 			usage,
@@ -305,6 +304,8 @@ func (c *CLIApplication) GetResult() error {
 		}
 		return nil
 	}
+
+	_, _ = io.Copy(io.Discard, resp.Body)
 
 	if *OptVerboseOutput {
 		fmt.Fprintf(c.Out, "%s -> ", ArgURL)
