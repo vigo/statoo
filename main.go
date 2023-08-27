@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/vigo/statoo/app"
+	"github.com/vigo/statoo/v2/app"
 )
 
 func main() {

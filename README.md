@@ -27,7 +27,7 @@ you can make the same kind of request and get a kind-of same response since
 You can install from the source;
 
 ```bash
-go install github.com/vigo/statoo@latest
+go install github.com/vigo/statoo/v2@latest
 ```
 
 or, you can install from `brew`:
@@ -211,7 +211,9 @@ statoo -commithash
 $ rake -T
 
 rake default               # show avaliable tasks (default task)
+rake docker:build          # Build image (locally)
 rake docker:lint           # lint Dockerfile
+rake docker:run[param]     # Run image (locally)
 rake release[revision]     # release new version major,minor,patch, default: patch
 rake test:run[verbose]     # run tests, generate coverage
 rake test:show_coverage    # show coverage after running tests
@@ -228,6 +230,14 @@ https://hub.docker.com/r/vigo/statoo/
 # latest
 docker run vigo/statoo -h
 docker run vigo/statoo -json -find "Meetup organization" https://vigo.io
+```
+
+to run docker locally via rake task:
+
+```bash
+rake docker:build
+rake docker:run["-h"]
+rake docker:run["https://ugur.ozyilmazel.com"]
 ```
 
 ---

@@ -4,7 +4,7 @@ import (
 	"flag"
 	"testing"
 
-	"github.com/vigo/statoo/app/flags"
+	"github.com/vigo/statoo/v2/app/flags"
 )
 
 func TestCustomRequestHeadersFlag(t *testing.T) {
