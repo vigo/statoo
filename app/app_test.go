@@ -12,9 +12,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/vigo/statoo/app"
-	"github.com/vigo/statoo/app/flags"
-	"github.com/vigo/statoo/app/version"
+	"github.com/vigo/statoo/v2/app"
+	"github.com/vigo/statoo/v2/app/flags"
+	"github.com/vigo/statoo/v2/app/version"
 )
 
 type gzipResponseWriter struct {

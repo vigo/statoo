@@ -100,10 +100,34 @@ end
 
 # docker
 # -----------------------------------------------------------------------------
+DOCKER_IMAGE_TAG = 'statoo:latest'
 namespace :docker do
   desc "lint Dockerfile"
   task :lint do
     system "hadolint Dockerfile"
+  end
+  
+  desc "Run image (locally)"
+  task :run, [:param] do |_, args|
+    cmd_args = [args.param] + args.extras
+    system %{
+      docker run #{DOCKER_IMAGE_TAG} #{cmd_args.join(' ')}
+    }
+    exit $?.exitstatus
+  end
+
+  desc "Build image (locally)"
+  task :build do
+    git_commit_hash = `git rev-parse HEAD`.chomp
+    goos =`go env GOOS`.chomp
+    goarch =`go env GOARCH`.chomp
+    build_commit_hash = "#{git_commit_hash}-#{goos}-#{goarch}"
+    
+    system %{
+      docker build --build-arg="BUILD_INFORMATION=#{build_commit_hash}" \
+        -t #{DOCKER_IMAGE_TAG} .
+    }
+    exit $?.exitstatus
   end
 end
 # -----------------------------------------------------------------------------

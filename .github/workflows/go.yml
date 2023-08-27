@@ -1,49 +1,47 @@
 name: build and test
+
 on:
+  pull_request:
   push:
     branches:
-    - main
-    - ST-*
-  pull_request:
+      - main
+    tags-ignore:
+      - '**'
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Go 1.19
-      uses: actions/setup-go@v3
-      with:
-        go-version: 1.19
-      id: go
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: "go.mod"
+        id: go
 
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v1
+      - name: Run tests
+        run: go test -race -count=1 -coverprofile=coverage.txt -covermode=atomic ./...
 
-    - name: Get dependencies
-      run: go mod download
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
 
-    - name: Run tests
-      run: go test -race -count=1 -coverprofile=coverage.txt -covermode=atomic ./...
+      - name: Build app
+        id: build_go_app
+        run: |
+          go build -v .
+          echo ::set-output name=exit_code::$?
 
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-
-    - name: Build app
-      id: build_go_app
-      run: |
-        go build -v .
-        echo ::set-output name=exit_code::$?
-
-    - name: Notify Slack on success
-      if: steps.build_go_app.outputs.exit_code == 0
-      id: slack_notification
-      uses: ravsamhq/notify-slack-action@v1
-      with:
-        status: ${{ job.status }}
-        notification_title: 'Build succeeded'
-        message_format: 'Statoo build succeeded. <{repo_url}|{repo}@{branch}> on <{commit_url}|{commit_sha}>'
-        footer: 'repo: <{repo_url}|{repo}>'
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+      - name: Notify Slack on success
+        if: steps.build_go_app.outputs.exit_code == 0
+        id: slack_notification
+        uses: ravsamhq/notify-slack-action@v1
+        with:
+          status: ${{ job.status }}
+          notification_title: 'Build succeeded'
+          message_format: 'Statoo build succeeded. <{repo_url}|{repo}@{branch}> on <{commit_url}|{commit_sha}>'
+          footer: 'repo: <{repo_url}|{repo}>'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
