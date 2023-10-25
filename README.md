@@ -2,7 +2,6 @@
 ![Go](https://img.shields.io/github/go-mod/go-version/vigo/statoo)
 [![Documentation](https://godoc.org/github.com/vigo/statoo?status.svg)](https://pkg.go.dev/github.com/vigo/statoo)
 [![Go Report Card](https://goreportcard.com/badge/github.com/vigo/statoo)](https://goreportcard.com/report/github.com/vigo/statoo)
-[![Build Status](https://travis-ci.org/vigo/statoo.svg?branch=main)](https://travis-ci.org/vigo/statoo)
 ![Go Build Status](https://github.com/vigo/statoo/actions/workflows/go.yml/badge.svg)
 ![GolangCI-Lint Status](https://github.com/vigo/statoo/actions/workflows/golang-lint.yml/badge.svg)
 ![Docker Lint Status](https://github.com/vigo/statoo/actions/workflows/docker-lint.yml/badge.svg)
