@@ -268,4 +268,8 @@ contributors are expected to adhere to the [code of conduct][coc].
 
 This project is licensed under MIT
 
+---
+
+![Alt](https://repobeats.axiom.co/api/embed/7bd0cfb64834682c6cbac20e6168fc105bd27eeb.svg "Repobeats analytics image")
+
 [coc]: https://github.com/vigo/statoo/blob/main/CODE_OF_CONDUCT.md
