@@ -1,4 +1,4 @@
-name: Build and push to GitHub Container Registry
+name: Build and push to GitHub CR
 
 on:
   workflow_dispatch:

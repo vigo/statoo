@@ -9,6 +9,7 @@
 ![Docker Pulls](https://img.shields.io/docker/pulls/vigo/statoo)
 ![Docker Size](https://img.shields.io/docker/image-size/vigo/statoo)
 ![Docker Build Status](https://github.com/vigo/statoo/actions/workflows/dockerhub.yml/badge.svg)
+[![GitHub Container Registry](https://github.com/vigo/statoo/actions/workflows/githubcr.yml/badge.svg)](https://github.com/vigo/statoo/actions/workflows/githubcr.yml)
 ![Powered by Rake](https://img.shields.io/badge/powered_by-rake-blue?logo=ruby)
 
 
