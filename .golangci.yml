@@ -1,85 +1,56 @@
+version: "2"
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - misspell
+    - gosec
+    - revive
+    - wrapcheck
+  settings:
+    revive:
+      enable-all-rules: true
+      rules:
+        - name: package-comments
+          disabled: true
+        - name: cognitive-complexity
+          disabled: true
+        - name: cyclomatic
+          disabled: true
+        - name: function-length
+          disabled: true
+        - name: line-length-limit
+          arguments: [120]
+        - name: add-constant
+          arguments:
+            - max-lit-count: "3"
+              allow-strs: '"","%w: %s"'
+              allow-ints: "0,1,2,10,30,64,100"
+              allow-floats: "0.0,0.,1.0,1.,2.0,2."
+    errcheck:
+      check-type-assertions: true
+      exclude-functions:
+        - fmt.Fprintln
+        - fmt.Fprintf
+
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+    - golines
+  settings:
+    golines:
+      max-len: 120
+
+issues:
+  fix: true
+
 run:
   concurrency: 4
   timeout: 1m
-  go: '1.19'
-
-linters-settings:
-  revive:
-    ignore-generated-header: true
-    severity: warning
-    rules:
-      - name: exported
-        severity: warning
-      - name: error-return
-        severity: warning
-      - name: error-naming
-        severity: warning
-      - name: if-return
-        severity: warning
-      - name: var-naming
-        severity: warning
-      - name: var-declaration
-        severity: warning
-      - name: receiver-naming
-        severity: warning
-      - name: errorf
-        severity: warning
-      - name: empty-block
-        severity: warning
-      - name: unused-parameter
-        severity: warning
-      - name: unreachable-code
-        severity: warning
-      - name: redefines-builtin-id
-        severity: warning
-      - name: superfluous-else
-        severity: warning
-      - name: unexported-return
-        severity: warning
-      - name: indent-error-flow
-        severity: warning
-      - name: blank-imports
-        severity: warning
-      - name: range
-        severity: warning
-      - name: time-naming
-        severity: warning
-      - name: context-as-argument
-        severity: warning
-      - name: context-keys-type
-        severity: warning
-      - name: indent-error-flow
-        severity: warning
-
-linters:
-  disable-all: true
-  enable:
-    - asciicheck 
-    - durationcheck 
-    - errcheck 
-    - errorlint 
-    - exhaustive 
-    - gosec 
-    - govet 
-    - makezero 
-    - nilerr 
-    - rowserrcheck 
-    - exportloopref 
-    - sqlclosecheck 
-    - staticcheck 
-    - typecheck 
-    - bodyclose 
-    - noctx 
-    - prealloc
-    - gosimple
-    - ineffassign
-    - unparam
-    - unused
-  presets:
-    - comment 
-    - error 
-    - format 
-    - metalinter 
-
-issues:
-  exclude-use-default: false
+  tests: false

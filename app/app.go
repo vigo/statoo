@@ -90,7 +90,7 @@ func flagUsage(code int) func() {
 			version.CommitHash,
 		)
 		if code > 0 {
-			os.Exit(code)
+			os.Exit(code) //nolint:revive
 		}
 	}
 }
@@ -139,7 +139,7 @@ func NewCLIApplication() *CLIApplication {
 	OptInsecureSkipVerify = flag.Bool("skip", false, helpOptInsecureSkipVerify)
 	flag.BoolVar(OptInsecureSkipVerify, "s", false, helpOptInsecureSkipVerify+" (short)")
 
-	flag.Parse()
+	flag.Parse() //nolint:revive
 
 	ArgURL = flag.Arg(0)
 
@@ -187,7 +187,14 @@ func (c *CLIApplication) Validate() error {
 
 // GetResult fetches the status information of given URL.
 func (c *CLIApplication) GetResult() error {
-	tr := http.DefaultTransport.(*http.Transport).Clone()
+	// tr := http.DefaultTransport.(*http.Transport).Clone()
+
+	transport, ok := http.DefaultTransport.(*http.Transport)
+	if !ok {
+		transport = &http.Transport{}
+	}
+
+	tr := transport.Clone()
 	tr.MaxIdleConns = 10
 	tr.IdleConnTimeout = 30 * time.Second
 	tr.DisableCompression = true
