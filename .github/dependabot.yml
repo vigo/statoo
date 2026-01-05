@@ -1,0 +1,53 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    reviewers:
+      - "vigo"
+    assignees:
+      - "vigo"
+    labels:
+      - "dependabot"
+      - "github-actions"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "[gha] - upgrade github action dependencies"
+      include: "scope"
+
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    reviewers:
+      - "vigo"
+    assignees:
+      - "vigo"
+    labels:
+      - "dependabot"
+      - "gomod"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "[gomod] - upgrade go dependencies"
+      include: "scope"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    reviewers:
+      - "vigo"
+    assignees:
+      - "vigo"
+    labels:
+      - "dependabot"
+      - "docker"
+    open-pull-requests-limit: 5
+    allow:
+      - dependency-name: "golang"
+      - dependency-name: "alpine"
+      - dependency-name: "busybox"
+    commit-message:
+      prefix: "[docker] - upgrade docker dependencies"
+      include: "scope"
