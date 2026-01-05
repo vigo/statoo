@@ -41,7 +41,7 @@ jobs:
       - name: Notify Slack on success
         if: steps.build_go_app.outputs.exit_code == 0
         id: slack_notification
-        uses: ravsamhq/notify-slack-action@v1
+        uses: ravsamhq/notify-slack-action@v2
         with:
           status: ${{ job.status }}
           notification_title: 'Build succeeded'
