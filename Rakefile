@@ -41,7 +41,7 @@ task :bump, [:revision] => [:has_bumpversion] do |_, args|
     abort "Please provide valid revision: #{AVAILABLE_REVISIONS.join(',')}"
   end
 
-  system "bumpversion #{args.revision}"
+  system "bump-my-version bump #{args.revision}"
 end
 
 task :get_current_branch do
