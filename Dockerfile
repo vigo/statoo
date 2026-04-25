@@ -1,4 +1,4 @@
-FROM golang:1.25-alpine AS builder
+FROM golang:1.26-alpine AS builder
 WORKDIR /go/src/github.com/vigo/statoo
 COPY . .
 RUN apk add --no-cache git=2.52.0-r0 \
