@@ -30,7 +30,7 @@ jobs:
         run: go test -race -count=1 -coverprofile=coverage.txt -covermode=atomic ./...
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
 
       - name: Build app
         id: build_go_app
