@@ -7,7 +7,7 @@ RUN apk add --no-cache git=2.52.0-r0 \
     GOOS=linux \
     go build -ldflags="-X 'github.com/vigo/statoo/app/version.CommitHash=$(git rev-parse HEAD)'" -a -installsuffix cgo -o statoo .
 
-FROM alpine:3.23
+FROM alpine:3.24
 RUN apk --no-cache add 
 COPY --from=builder /go/src/github.com/vigo/statoo/statoo /bin/statoo
 ENTRYPOINT ["/bin/statoo"]
